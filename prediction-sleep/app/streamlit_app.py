@@ -19,7 +19,14 @@ def load_data():
 
 @st.cache_resource
 def load_model():
-    return joblib.load(MODEL_PATH)
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError("Model file not found. Run scripts/step5_train_models.py first.")
+    try:
+        return joblib.load(MODEL_PATH)
+    except Exception as exc:
+        raise RuntimeError(
+            "Failed to load model. Re-train with scripts/step5_train_models.py in the current virtual environment."
+        ) from exc
 
 
 def predict(df_features, model):
@@ -31,10 +38,14 @@ def predict(df_features, model):
 
 def main():
     st.title("Next-Day Fatigue Prediction")
-    st.write("Uses your Apple Watch sleep + physiology features and a logistic regression model.")
+    st.write("Uses Apple Watch sleep + physiology features and a trained random forest model.")
 
     df = load_data()
-    model = load_model()
+    try:
+        model = load_model()
+    except Exception as exc:
+        st.error(str(exc))
+        st.stop()
 
     feature_cols = [c for c in df.columns if c != TARGET_COL]
 

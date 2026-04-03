@@ -27,8 +27,11 @@ This folder is a GitHub-ready collaboration copy of the project.
 cd prediction-sleep
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -U pip
+python -m pip install -r requirements.txt
 ```
+
+All runtime commands below should be executed after activating `.venv`.
 
 Run pipeline:
 
@@ -56,4 +59,3 @@ git branch -M main
 git remote add origin <your-github-repo-url>
 git push -u origin main
 ```
-

@@ -20,7 +20,14 @@ TARGET_COL = "fatigue_label"
 def load_model():
     if not MODEL_PATH.exists():
         raise SystemExit("Model file not found. Run scripts/step5_train_models.py first.")
-    return joblib.load(MODEL_PATH)
+    try:
+        return joblib.load(MODEL_PATH)
+    except Exception as exc:
+        raise SystemExit(
+            "Failed to load model. This is usually caused by dependency/model version mismatch. "
+            "Re-train with scripts/step5_train_models.py in the current virtual environment. "
+            f"Original error: {exc}"
+        ) from exc
 
 
 def load_features_for_date(date_str: str) -> pd.DataFrame:

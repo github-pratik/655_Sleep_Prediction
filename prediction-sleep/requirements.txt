@@ -1,22 +1,23 @@
 # Core
-pandas>=2.2.0,<2.3
-numpy>=1.26,<2.1
-scikit-learn>=1.5,<1.7
-scipy>=1.13,<1.14
-matplotlib>=3.8,<3.10
+pandas>=2.2.3,<2.4
+numpy>=2.2,<2.4
+scikit-learn>=1.7,<1.9
+scipy>=1.15,<1.18
+matplotlib>=3.10,<3.12
 seaborn>=0.13,<0.14
-pyarrow>=15,<18
+pyarrow>=18,<21
 rich>=13.9,<14
 
 # XML/GPX parsing
-lxml>=5.2,<6
+lxml>=5.3,<6
 gpxpy>=1.6,<1.7
 
 # Web/API/UI (choose one later)
 fastapi>=0.115,<0.117
 uvicorn>=0.30,<0.32
-streamlit>=1.39,<1.43
+streamlit>=1.45,<1.52
+altair>=5.5,<6
 
 # Optional notebooks
 tqdm>=4.66,<4.69
-jupyterlab>=4.2,<4.4
+jupyterlab>=4.2,<4.5
