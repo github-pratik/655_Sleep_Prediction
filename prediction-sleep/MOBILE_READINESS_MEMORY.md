@@ -155,3 +155,37 @@ Open issues:
 Next step:
 ```
 
+## Iteration Log
+
+Date: 2026-04-02
+Change summary: Added a mobile-first model training/evaluation track and created a React Native edge-inference demo scaffold.
+Files touched:
+- `scripts/step5_train_mobile_models.py`
+- `predict.py`
+- `app/streamlit_app.py`
+- `artifacts/feature_schema.json`
+- `artifacts/mobile_linear_contract.json`
+- `reports/mobile_model_scores.csv`
+- `reports/mobile_model_report.json`
+- `models/mobile_champion.pkl`
+- `models/mobile_champion_name.txt`
+- `mobile_demo_app/*`
+Model(s):
+- Champion (accuracy-oriented mobile-eligible): `rf_small_n96_d8`
+- Best linear app contract model: `logreg_c0_1`
+Metrics (accuracy/F1):
+- Champion test accuracy: `0.519`
+- Champion weighted F1: `0.517`
+Size (KB/MB):
+- Champion model size: `~325.3 KB`
+- Best linear model size: `~5.0 KB`
+Latency (p50/p95):
+- Champion single inference: `p50 ~14.7 ms`, `p95 ~15.3 ms`
+- Best linear single inference: `p50 ~0.9 ms`, `p95 ~1.0 ms`
+Memory/Battery notes:
+- No on-device battery/memory benchmark yet; current timings are desktop proxy.
+Open issues:
+- Need parity-check report between sklearn and linear contract inference.
+- Need real phone/watch benchmark run.
+Next step:
+- Build a mobile benchmark harness and add parity validation script.

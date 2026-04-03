@@ -6,7 +6,7 @@ import streamlit as st
 import joblib
 import altair as alt
 
-MODEL_PATH = Path("models/rf.pkl")
+MODEL_PATH = Path("models/mobile_champion.pkl") if Path("models/mobile_champion.pkl").exists() else Path("models/rf.pkl")
 DATA_PATH = Path("dataset/model_data.csv")
 TARGET_COL = "fatigue_label"
 
@@ -19,14 +19,7 @@ def load_data():
 
 @st.cache_resource
 def load_model():
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError("Model file not found. Run scripts/step5_train_models.py first.")
-    try:
-        return joblib.load(MODEL_PATH)
-    except Exception as exc:
-        raise RuntimeError(
-            "Failed to load model. Re-train with scripts/step5_train_models.py in the current virtual environment."
-        ) from exc
+    return joblib.load(MODEL_PATH)
 
 
 def predict(df_features, model):
@@ -38,14 +31,12 @@ def predict(df_features, model):
 
 def main():
     st.title("Next-Day Fatigue Prediction")
-    st.write("Uses Apple Watch sleep + physiology features and a trained random forest model.")
+    st.write("Uses Apple Watch sleep + physiology features with a mobile-focused prediction model.")
 
     df = load_data()
-    try:
-        model = load_model()
-    except Exception as exc:
-        st.error(str(exc))
-        st.stop()
+    model = load_model()
+    model_name = type(model.named_steps["model"]).__name__ if hasattr(model, "named_steps") else type(model).__name__
+    st.caption(f"Loaded model: `{MODEL_PATH}` ({model_name})")
 
     feature_cols = [c for c in df.columns if c != TARGET_COL]
 

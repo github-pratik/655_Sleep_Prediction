@@ -120,7 +120,7 @@ def main():
     preprocessor = build_preprocessor(feature_cols)
 
     models = {
-        "logreg": LogisticRegression(max_iter=1000),
+        "logreg": LogisticRegression(max_iter=1000, n_jobs=-1),
         "rf": RandomForestClassifier(n_estimators=300, max_depth=None, random_state=42, n_jobs=-1),
     }
 
