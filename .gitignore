@@ -1,0 +1,26 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Notebook/IDE
+.ipynb_checkpoints/
+.idea/
+.vscode/
+
+# Large/private raw exports (keep out of GitHub by default)
+apple_health_export/
+raw_data/
+export.xml
+export_cda.xml
+

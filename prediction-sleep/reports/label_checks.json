@@ -1,0 +1,9 @@
+{
+  "nights_total": 359,
+  "labels_present": "359",
+  "labels_missing": 0,
+  "class_balance": {
+    "1": 180,
+    "0": 179
+  }
+}

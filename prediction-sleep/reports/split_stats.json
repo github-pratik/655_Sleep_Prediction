@@ -1,0 +1,46 @@
+{
+  "total_rows": 359,
+  "train_rows": 251,
+  "test_rows": 108,
+  "split_index": 251,
+  "features": [
+    "in_bed_minutes",
+    "rem_minutes",
+    "deep_minutes",
+    "core_minutes",
+    "asleep_minutes",
+    "total_sleep_minutes",
+    "sleep_efficiency",
+    "rem_pct",
+    "deep_pct",
+    "core_pct",
+    "hr_mean",
+    "hr_min",
+    "hr_max",
+    "hr_median",
+    "hr_std",
+    "hrv_mean",
+    "hrv_min",
+    "hrv_max",
+    "hrv_median",
+    "hrv_std",
+    "resp_mean",
+    "resp_min",
+    "resp_max",
+    "resp_median",
+    "resp_std",
+    "spo2_mean",
+    "spo2_min",
+    "spo2_max",
+    "spo2_median",
+    "spo2_std"
+  ],
+  "class_balance_train": {
+    "0": 126,
+    "1": 125
+  },
+  "class_balance_test": {
+    "1": 55,
+    "0": 53
+  }
+}
