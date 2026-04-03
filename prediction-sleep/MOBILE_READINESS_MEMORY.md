@@ -1,6 +1,6 @@
 # Mobile Readiness Memory
 
-Last updated: 2026-04-02 (America/New_York)
+Last updated: 2026-04-03 (America/New_York)
 Project: Next-Day Fatigue Prediction from Apple Watch data
 Primary codebase: `Prediction sleep/`
 
@@ -189,3 +189,27 @@ Open issues:
 - Need real phone/watch benchmark run.
 Next step:
 - Build a mobile benchmark harness and add parity validation script.
+
+Date: 2026-04-03
+Change summary: Added generated Xcode project scaffold and simulator-safe demo mode for iOS app testing.
+Files touched:
+- `ios_healthkit_demo/project.yml`
+- `ios_healthkit_demo/generate_project.sh`
+- `ios_healthkit_demo/SleepFatigueEdgeDemo.xcodeproj/*`
+- `ios_healthkit_demo/ContentView.swift`
+- `ios_healthkit_demo/README.md`
+Model(s):
+- No model retraining in this step.
+Metrics (accuracy/F1):
+- No metric change.
+Size (KB/MB):
+- No model artifact change.
+Latency (p50/p95):
+- No latency benchmark change.
+Memory/Battery notes:
+- Still pending real device benchmark.
+Open issues:
+- Need parity-check report between sklearn and linear-contract inference.
+- Need device-side benchmark logs for final report.
+Next step:
+- Add parity test script and a device benchmark capture template.

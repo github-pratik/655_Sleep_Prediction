@@ -36,6 +36,14 @@ Notes:
 - The project already includes HealthKit entitlement and usage descriptions.
 - HealthKit data is unavailable in iOS simulator, so use a physical iPhone.
 
+## File to Open in Xcode
+
+Open:
+- `SleepFatigueEdgeDemo.xcodeproj`
+
+from folder:
+- `prediction-sleep/ios_healthkit_demo/`
+
 ## Simulator Testing Mode
 
 You can still test app flow in Simulator:
