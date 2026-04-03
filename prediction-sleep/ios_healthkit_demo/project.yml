@@ -1,0 +1,51 @@
+name: SleepFatigueEdgeDemo
+
+options:
+  minimumXcodeGenVersion: 2.45.0
+  deploymentTarget:
+    iOS: "17.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: Sleep Fatigue Edge
+    INFOPLIST_KEY_NSHealthShareUsageDescription: This app reads sleep and vitals to compute fatigue prediction on-device.
+    INFOPLIST_KEY_NSHealthUpdateUsageDescription: This app may write wellness summaries if enabled in future versions.
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+
+targets:
+  SleepFatigueEdgeDemo:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: .
+        includes:
+          - "*.swift"
+    resources:
+      - mobile_linear_contract.json
+    entitlements:
+      path: SleepFatigueEdgeDemo.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.githubpratik.sleepfatigueedgedemo
+        PRODUCT_NAME: SleepFatigueEdgeDemo
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+
+schemes:
+  SleepFatigueEdgeDemo:
+    build:
+      targets:
+        SleepFatigueEdgeDemo: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release
+

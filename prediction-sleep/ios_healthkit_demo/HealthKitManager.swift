@@ -167,9 +167,9 @@ final class HealthKitManager: ObservableObject {
                     inBedMinutes += minutes
                 }
 
-                // Sleep stage values from HealthKit.
-                // 1: asleep (legacy/unspecified), 3: core, 4: deep, 5: REM
-                if value == HKCategoryValueSleepAnalysis.asleep.rawValue {
+                // Sleep stage values from HealthKit:
+                // 1: asleepUnspecified, 3: asleepCore, 4: asleepDeep, 5: asleepREM
+                if value == 1 {
                     asleepMinutes += minutes
                 } else if value == 3 {
                     coreMinutes += minutes
@@ -255,4 +255,3 @@ final class HealthKitManager: ObservableObject {
         healthStore.execute(query)
     }
 }
-
