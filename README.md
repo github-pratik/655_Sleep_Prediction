@@ -45,8 +45,8 @@ This repo does not auto-download public datasets because dataset terms and folde
 Recommended local layout:
 
 ```bash
-prediction-sleep/data/public/SleepAccel/
-prediction-sleep/data/public/PPG-DaLiA/
+prediction-sleep/dataset/public/SleepAccel/
+prediction-sleep/dataset/public/PPG-DaLiA/
 ```
 
 Then run the phased pipeline with explicit paths:
@@ -55,8 +55,8 @@ Then run the phased pipeline with explicit paths:
 cd prediction-sleep
 chmod +x scripts/run_phases_6_9.sh
 scripts/run_phases_6_9.sh \
-  --sleepaccel-root data/public/SleepAccel \
-  --ppg-dalia-root data/public/PPG-DaLiA \
+  --sleepaccel-root dataset/public/SleepAccel \
+  --ppg-dalia-root dataset/public/PPG-DaLiA \
   --skip-latency
 ```
 

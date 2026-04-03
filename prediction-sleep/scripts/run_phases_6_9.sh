@@ -110,17 +110,26 @@ echo "Pipeline root: $ROOT" | tee "$LOG_DIR/summary.log"
 echo "Python: $PYTHON_BIN" | tee -a "$LOG_DIR/summary.log"
 echo "Logs: $LOG_DIR" | tee -a "$LOG_DIR/summary.log"
 
-if [[ ${#SLEEPACCEL_ROOTS[@]} -gt 0 || ${#PPG_DALIA_ROOTS[@]} -gt 0 ]]; then
+has_sleepaccel=0
+has_ppg_dalia=0
+if [[ ${SLEEPACCEL_ROOTS+set} == "set" ]] && [[ ${#SLEEPACCEL_ROOTS[@]} -gt 0 ]]; then
+  has_sleepaccel=1
+fi
+if [[ ${PPG_DALIA_ROOTS+set} == "set" ]] && [[ ${#PPG_DALIA_ROOTS[@]} -gt 0 ]]; then
+  has_ppg_dalia=1
+fi
+
+if [[ $has_sleepaccel -eq 1 || $has_ppg_dalia -eq 1 ]]; then
   step6_cmd=(
     "$PYTHON_BIN" "scripts/step6_public_pretrain.py"
     "--search-root" "$SEARCH_ROOT"
     "--output-dir" "artifacts/public_pretrain"
     "--save-window-table"
   )
-  for root in "${SLEEPACCEL_ROOTS[@]}"; do
+  for root in ${SLEEPACCEL_ROOTS+"${SLEEPACCEL_ROOTS[@]}"}; do
     step6_cmd+=("--sleepaccel-root" "$root")
   done
-  for root in "${PPG_DALIA_ROOTS[@]}"; do
+  for root in ${PPG_DALIA_ROOTS+"${PPG_DALIA_ROOTS[@]}"}; do
     step6_cmd+=("--ppg-dalia-root" "$root")
   done
   run_step "step6_public_pretrain" "${step6_cmd[@]}"

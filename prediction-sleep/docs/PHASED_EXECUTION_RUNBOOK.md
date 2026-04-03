@@ -30,8 +30,20 @@ Run from:
 
 ### One-command runner (phases 6 to 9 + logs)
 
+Recommended local layout:
+`prediction-sleep/dataset/public/SleepAccel`
+`prediction-sleep/dataset/public/PPG-DaLiA`
+
 ```bash
 chmod +x scripts/run_phases_6_9.sh
+scripts/run_phases_6_9.sh \
+  --sleepaccel-root dataset/public/SleepAccel \
+  --ppg-dalia-root dataset/public/PPG-DaLiA \
+  --skip-latency
+```
+
+If your datasets are outside the repo, pass absolute paths instead:
+```bash
 scripts/run_phases_6_9.sh \
   --sleepaccel-root /absolute/path/to/SleepAccel \
   --ppg-dalia-root /absolute/path/to/PPG-DaLiA \
@@ -51,8 +63,8 @@ Logs are written to:
 With real public datasets:
 ```bash
 .venv/bin/python scripts/step6_public_pretrain.py \
-  --sleepaccel-root /absolute/path/to/SleepAccel \
-  --ppg-dalia-root /absolute/path/to/PPG-DaLiA \
+  --sleepaccel-root dataset/public/SleepAccel \
+  --ppg-dalia-root dataset/public/PPG-DaLiA \
   --output-dir artifacts/public_pretrain \
   --save-window-table
 ```
