@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next-Day Fatigue Predictor</title>
+    <meta name="description" content="AI-assisted fatigue prediction based on your Apple Watch physiological data.">
+    <!-- Google Fonts: Outfit for a modern, premium look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>VitalSync</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active"><a href="#" id="nav-dashboard">Dashboard</a></li>
+                <li><a href="#" id="nav-history">History & Trends</a></li>
+                <li><a href="#" id="nav-settings">Settings</a></li>
+            </ul>
+            <button class="sync-btn" id="sync-watch-btn">
+                <span class="sync-icon">⟳</span> Sync Watch Data
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <h2>Welcome back, User</h2>
+                <div class="date-display" id="current-date">April 02, 2026</div>
+            </header>
+
+            <section class="prediction-banner" id="prediction-banner">
+                <div class="banner-content">
+                    <h3>Tomorrow's Fatigue Prediction</h3>
+                    <p class="prediction-status loading" id="prediction-output">Syncing data to generate prediction...</p>
+                    <p class="prediction-insight" id="prediction-insight">Our trained model is analyzing your latest metrics.</p>
+                </div>
+                <div class="prediction-ring">
+                    <div class="ring-circle">
+                        <span id="fatigue-score">--</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="metrics-grid">
+                <!-- Sleep Card -->
+                <div class="metric-card glass">
+                    <div class="card-header">
+                        <h4>Sleep Duration</h4>
+                        <span class="icon sleep-icon">☾</span>
+                    </div>
+                    <div class="card-value" id="val-sleep">-- hrs</div>
+                    <div class="card-trend positive">Analyzing...</div>
+                </div>
+
+                <!-- HRV Card -->
+                <div class="metric-card glass">
+                    <div class="card-header">
+                        <h4>Heart Rate Variability</h4>
+                        <span class="icon hrv-icon">♥</span>
+                    </div>
+                    <div class="card-value" id="val-hrv">-- ms</div>
+                    <div class="card-trend">Analyzing...</div>
+                </div>
+
+                <!-- SpO2 Card -->
+                <div class="metric-card glass">
+                    <div class="card-header">
+                        <h4>SpO2</h4>
+                        <span class="icon spo2-icon">O₂</span>
+                    </div>
+                    <div class="card-value" id="val-spo2">-- %</div>
+                    <div class="card-trend">Analyzing...</div>
+                </div>
+
+                <!-- Resting HR Card -->
+                <div class="metric-card glass">
+                    <div class="card-header">
+                        <h4>Resting HR</h4>
+                        <span class="icon hr-icon">♡</span>
+                    </div>
+                    <div class="card-value" id="val-hr">-- bpm</div>
+                    <div class="card-trend">Analyzing...</div>
+                </div>
+            </section>
+
+            <section class="model-info">
+                <h3>Model Insights</h3>
+                <div class="insight-container glass">
+                    <div class="insight-row">
+                        <span class="insight-label">Current Pipeline:</span>
+                        <span class="insight-value">Random Forest (v1.0)</span>
+                    </div>
+                    <div class="insight-row">
+                        <span class="insight-label">Inference Mode:</span>
+                        <span class="insight-value">Local / On-Device Ready</span>
+                    </div>
+                    <div class="insight-row">
+                        <span class="insight-label">Primary Factor:</span>
+                        <span class="insight-value" id="primary-factor">Awaiting Sync...</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
