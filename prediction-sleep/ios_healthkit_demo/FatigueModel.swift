@@ -9,6 +9,7 @@ struct LinearContract: Codable {
     let coef: [String: Double]
     let intercept: Double
     let classes: [Int]
+    let decisionThreshold: Double?
 
     enum CodingKeys: String, CodingKey {
         case contractType = "contract_type"
@@ -19,6 +20,7 @@ struct LinearContract: Codable {
         case coef
         case intercept
         case classes
+        case decisionThreshold = "decision_threshold"
     }
 }
 
@@ -72,11 +74,11 @@ final class FatigueModel {
 
         let p1 = 1 / (1 + exp(-logit))
         let p0 = 1 - p1
+        let threshold = contract.decisionThreshold ?? 0.5
         let positiveClass = contract.classes.count > 1 ? contract.classes[1] : 1
         let negativeClass = contract.classes.first ?? 0
-        let label = p1 >= 0.5 ? positiveClass : negativeClass
+        let label = p1 >= threshold ? positiveClass : negativeClass
 
         return FatiguePrediction(label: label, probability0: p0, probability1: p1, logit: logit)
     }
 }
-

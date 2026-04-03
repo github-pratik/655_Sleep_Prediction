@@ -6,6 +6,9 @@ export function predictWithLinearContract(inputFeatures, contract) {
   const coef = contract.coef;
   const intercept = contract.intercept;
   const classes = contract.classes;
+  const threshold = Number.isFinite(Number(contract.decision_threshold))
+    ? Number(contract.decision_threshold)
+    : 0.5;
 
   let logit = intercept;
   for (const feature of order) {
@@ -18,7 +21,6 @@ export function predictWithLinearContract(inputFeatures, contract) {
 
   const prob1 = 1 / (1 + Math.exp(-logit));
   const prob0 = 1 - prob1;
-  const threshold = 0.5;
   const label = prob1 >= threshold ? classes[1] : classes[0];
 
   return {
@@ -30,4 +32,3 @@ export function predictWithLinearContract(inputFeatures, contract) {
     logit
   };
 }
-

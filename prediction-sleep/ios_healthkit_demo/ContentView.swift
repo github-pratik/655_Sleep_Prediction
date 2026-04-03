@@ -80,6 +80,9 @@ struct ContentView: View {
             Text("HealthKit: \(healthKit.authorizationGranted ? "Connected" : "Not Connected")")
             Text("Runtime: On-device (No Cloud)")
             Text("Source: Apple Health (Watch synced)")
+            Text("Data origin: \(healthKit.lastDataOrigin)")
+                .foregroundStyle(.secondary)
+                .font(.footnote)
             Text("Last sync: \(formatSyncTime(lastSyncAt))")
                 .foregroundStyle(.secondary)
             Text(uiMessage)
@@ -109,6 +112,12 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .disabled(!healthKit.authorizationGranted || loading)
             }
+
+            Button("Fetch + Predict") {
+                fetchLatestNightAndPredict()
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!healthKit.authorizationGranted || model == nil || loading)
 
             HStack(spacing: 10) {
                 Button("Load Demo Data (Simulator Safe)") {
@@ -172,6 +181,11 @@ struct ContentView: View {
             }
 
             Text("Confidence: \(Int((confidence * 100).rounded()))%")
+            if let threshold = model?.contract.decisionThreshold {
+                Text("Decision threshold: \(format(threshold))")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+            }
             Text("Computed locally in \(format(lastInferenceMs)) ms")
             Text("No server request was used.")
                 .foregroundStyle(.secondary)
@@ -286,6 +300,26 @@ struct ContentView: View {
         }
     }
 
+    private func fetchLatestNightAndPredict() {
+        loading = true
+        healthKit.fetchLatestNightFeatures { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let fetched):
+                    features = fetched
+                    prediction = nil
+                    lastSyncAt = Date()
+                    runPrediction()
+                    loading = false
+                    uiMessage = "Fetched Apple Health data and predicted on-device."
+                case .failure(let error):
+                    loading = false
+                    uiMessage = "Fetch + predict failed: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
     private func runPrediction() {
         guard let model else {
             uiMessage = "Model contract not loaded."
@@ -364,4 +398,3 @@ struct ContentView: View {
         return formatter.string(from: value)
     }
 }
-

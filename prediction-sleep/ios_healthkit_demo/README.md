@@ -4,6 +4,7 @@ This demo is a native SwiftUI app path for CS655 mobile-computing framing:
 - Reads Apple Health data directly on iPhone (including Apple Watch-synced data)
 - Computes features on-device
 - Runs fatigue prediction on-device (no cloud inference)
+- Prioritizes Apple Watch-origin samples when available
 
 ## Included Files
 
@@ -67,6 +68,11 @@ Use physical iPhone for real HealthKit fetch.
 - Oxygen saturation
 
 The app fetches the latest night block (using a night-key shift), computes summary features, and predicts locally.
+
+Data source behavior:
+- Quantity metrics (HR/HRV/Resp/SpO2): user-entered samples are excluded, and Apple Watch-origin samples are preferred when available.
+- Sleep staging: user-entered samples are excluded, and Apple Watch-origin samples are preferred for the selected night when available.
+- The UI displays a source-origin summary and supports one-tap `Fetch + Predict`.
 
 ## Notes
 

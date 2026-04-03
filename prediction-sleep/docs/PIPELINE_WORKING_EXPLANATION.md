@@ -46,12 +46,13 @@ Build a fatigue prediction workflow that:
 - What happens:
   - Train compact student candidates
   - Evaluate size + latency + weighted F1
+  - Calibrate decision threshold with out-of-fold time-split probabilities, with safety fallback to `0.5` when unstable
   - Export champion + linear contract
 - Outputs:
   - `models/distilled_mobile.pkl`
   - `reports/distillation_report.json`
   - `reports/distillation_scores.csv`
-  - `artifacts/distilled_linear_contract.json` (if linear champion)
+  - `artifacts/distilled_linear_contract.json` (if linear champion, includes `decision_threshold`)
 
 4. **Phase 9: Research Evaluation (`step9_research_eval.py`)**
 - Inputs:

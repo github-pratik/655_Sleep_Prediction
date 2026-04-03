@@ -33,6 +33,7 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -43,6 +44,7 @@ from sklearn.metrics import (
     confusion_matrix,
     precision_recall_fscore_support,
 )
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
@@ -303,7 +305,12 @@ def is_mobile_eligible(size_kb: float, single_p95_ms: float) -> bool:
     return size_kb <= 1000 and single_p95_ms <= 25
 
 
-def export_linear_contract_if_possible(model_pipeline, feature_cols, out_path: Path) -> bool:
+def export_linear_contract_if_possible(
+    model_pipeline,
+    feature_cols,
+    out_path: Path,
+    decision_threshold: float = 0.5,
+) -> bool:
     model = model_pipeline.named_steps["model"]
     if not hasattr(model, "coef_"):
         return False
@@ -327,6 +334,7 @@ def export_linear_contract_if_possible(model_pipeline, feature_cols, out_path: P
         "coef": {col: float(model.coef_[0][idx]) for idx, col in enumerate(feature_cols)},
         "intercept": float(model.intercept_[0]),
         "classes": [int(c) for c in model.classes_.tolist()],
+        "decision_threshold": float(decision_threshold),
     }
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -413,6 +421,132 @@ def fit_student(model, X_train, y_train, teacher_meta, distill_weight: float = 0
             model.fit(X_train, y_train)
             return model
     raise SystemExit(f"Unsupported student estimator: {type(model).__name__}")
+
+
+def positive_class_index(classes: np.ndarray) -> int:
+    as_list = [int(c) for c in classes.tolist()]
+    if 1 in as_list:
+        return as_list.index(1)
+    return int(np.argmax(as_list))
+
+
+def tune_decision_threshold(
+    model_pipeline,
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    max_splits: int = 5,
+) -> dict[str, Any]:
+    if len(np.unique(y_train)) < 2:
+        return {
+            "available": False,
+            "note": "threshold tuning skipped: train split has a single class",
+            "decision_threshold": 0.5,
+        }
+
+    folds: list[tuple[np.ndarray, np.ndarray]] = []
+    for n_splits in range(min(max_splits, 5), 1, -1):
+        splitter = TimeSeriesSplit(n_splits=n_splits)
+        candidate_folds: list[tuple[np.ndarray, np.ndarray]] = []
+        valid = True
+        for train_idx, val_idx in splitter.split(np.zeros(len(y_train))):
+            if len(np.unique(y_train[train_idx])) < 2 or len(np.unique(y_train[val_idx])) < 2:
+                valid = False
+                break
+            candidate_folds.append((train_idx, val_idx))
+        if valid and candidate_folds:
+            folds = candidate_folds
+            break
+
+    if not folds:
+        return {
+            "available": False,
+            "note": "threshold tuning skipped: no valid TimeSeriesSplit folds with both classes",
+            "decision_threshold": 0.5,
+        }
+
+    oof_prob = np.full(shape=(len(y_train),), fill_value=np.nan, dtype=float)
+    for train_idx, val_idx in folds:
+        fold_model = clone(model_pipeline)
+        fold_model.fit(X_train.iloc[train_idx], y_train[train_idx])
+        if not hasattr(fold_model, "predict_proba"):
+            return {
+                "available": False,
+                "note": "threshold tuning skipped: model has no predict_proba",
+                "decision_threshold": 0.5,
+            }
+        proba = fold_model.predict_proba(X_train.iloc[val_idx])
+        classes = getattr(fold_model, "classes_", np.array([0, 1]))
+        pos_idx = positive_class_index(np.asarray(classes))
+        oof_prob[val_idx] = proba[:, pos_idx]
+
+    valid_mask = np.isfinite(oof_prob)
+    if valid_mask.sum() == 0:
+        return {
+            "available": False,
+            "note": "threshold tuning skipped: no valid out-of-fold probabilities",
+            "decision_threshold": 0.5,
+        }
+
+    y_valid = y_train[valid_mask]
+    prob_valid = oof_prob[valid_mask]
+    threshold_grid = np.linspace(0.20, 0.80, 61)
+
+    best = None
+    for threshold in threshold_grid:
+        preds = (prob_valid >= threshold).astype(int)
+        metrics = evaluate(y_valid, preds)
+        candidate = {
+            "threshold": float(threshold),
+            "weighted_f1": float(metrics["weighted_f1"]),
+            "macro_f1": float(metrics["macro_f1"]),
+            "kappa": float(metrics["kappa"]),
+        }
+        if best is None:
+            best = candidate
+            continue
+        ranking_key = (candidate["weighted_f1"], candidate["kappa"], -abs(candidate["threshold"] - 0.5))
+        best_key = (best["weighted_f1"], best["kappa"], -abs(best["threshold"] - 0.5))
+        if ranking_key > best_key:
+            best = candidate
+
+    default_pred = (prob_valid >= 0.5).astype(int)
+    default_metrics = evaluate(y_valid, default_pred)
+
+    return {
+        "available": True,
+        "note": "decision threshold tuned on out-of-fold train probabilities",
+        "decision_threshold": float(best["threshold"]),
+        "folds_used": int(len(folds)),
+        "samples_scored": int(valid_mask.sum()),
+        "default_threshold": {
+            "threshold": 0.5,
+            "weighted_f1": float(default_metrics["weighted_f1"]),
+            "macro_f1": float(default_metrics["macro_f1"]),
+            "kappa": float(default_metrics["kappa"]),
+        },
+        "best_threshold": best,
+        "delta_weighted_f1": float(best["weighted_f1"] - default_metrics["weighted_f1"]),
+    }
+
+
+def select_deployment_threshold(
+    tuning: dict[str, Any] | None,
+    min_gain: float = 0.02,
+    max_distance_from_default: float = 0.1,
+) -> tuple[float, str]:
+    if not tuning or not tuning.get("available", False):
+        return 0.5, "fallback_no_tuning"
+
+    threshold = float(tuning.get("decision_threshold", 0.5))
+    gain = float(tuning.get("delta_weighted_f1", 0.0))
+
+    if gain < min_gain:
+        return 0.5, f"fallback_gain_lt_{min_gain:.2f}"
+
+    if abs(threshold - 0.5) > max_distance_from_default:
+        return 0.5, f"fallback_shift_gt_{max_distance_from_default:.2f}"
+
+    return threshold, "accepted_tuned_threshold"
 
 
 def main():
@@ -550,6 +684,23 @@ def main():
     champion_name = champion_row["model_name"]
     champion_model = model_store[champion_name]
     champion_metrics = next(r for r in candidate_rows if r["model_name"] == champion_name)
+    champion_threshold_tuning = tune_decision_threshold(champion_model, X_train_raw, y_train)
+    decision_threshold, champion_threshold_reason = select_deployment_threshold(champion_threshold_tuning)
+
+    tuned_test_metrics = None
+    if hasattr(champion_model, "predict_proba"):
+        proba_test = champion_model.predict_proba(X_test_raw)
+        classes = getattr(champion_model, "classes_", np.array([0, 1]))
+        pos_idx = positive_class_index(np.asarray(classes))
+        y_pred_tuned = (proba_test[:, pos_idx] >= decision_threshold).astype(int)
+        tuned_metrics_payload = evaluate(y_test, y_pred_tuned)
+        tuned_test_metrics = {
+            "decision_threshold": decision_threshold,
+            "accuracy": float(tuned_metrics_payload["accuracy"]),
+            "weighted_f1": float(tuned_metrics_payload["weighted_f1"]),
+            "macro_f1": float(tuned_metrics_payload["macro_f1"]),
+            "kappa": float(tuned_metrics_payload["kappa"]),
+        }
 
     joblib.dump(champion_model, models_dir / "distilled_mobile.pkl")
     (models_dir / "distilled_mobile_name.txt").write_text(str(champion_name))
@@ -570,14 +721,24 @@ def main():
         if r["model_name"].startswith("logreg_") or r["model_name"].startswith("sgd_")
     ]
     best_linear_name = None
+    best_linear_threshold = 0.5
+    best_linear_threshold_reason = "fallback_linear_missing"
+    linear_threshold_tuning = None
     linear_contract_exported = False
     if linear_rows:
         best_linear = sorted(linear_rows, key=lambda r: r["weighted_f1"], reverse=True)[0]
         best_linear_name = best_linear["model_name"]
+        linear_threshold_tuning = tune_decision_threshold(
+            model_store[best_linear_name],
+            X_train_raw,
+            y_train,
+        )
+        best_linear_threshold, best_linear_threshold_reason = select_deployment_threshold(linear_threshold_tuning)
         linear_contract_exported = export_linear_contract_if_possible(
             model_pipeline=model_store[best_linear_name],
             feature_cols=feature_cols,
             out_path=artifacts_dir / "distilled_linear_contract.json",
+            decision_threshold=best_linear_threshold,
         )
 
     report = {
@@ -589,12 +750,19 @@ def main():
             "champion_model_path": "models/distilled_mobile.pkl",
             "best_linear_model": best_linear_name,
             "linear_contract_exported": bool(linear_contract_exported),
+            "champion_decision_threshold": decision_threshold,
+            "champion_decision_threshold_reason": champion_threshold_reason,
+            "best_linear_decision_threshold": best_linear_threshold,
+            "best_linear_decision_threshold_reason": best_linear_threshold_reason,
         },
         "teacher_targets": {
             "mean_confidence": float(np.mean(teacher_targets["confidence"])),
             "median_confidence": float(np.median(teacher_targets["confidence"])),
         },
+        "champion_threshold_tuning": champion_threshold_tuning,
+        "best_linear_threshold_tuning": linear_threshold_tuning,
         "champion_metrics": champion_metrics,
+        "champion_tuned_test_metrics": tuned_test_metrics,
         "all_models": candidate_rows,
     }
 

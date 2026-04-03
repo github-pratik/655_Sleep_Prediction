@@ -130,7 +130,7 @@ Phase 8:
 - `reports/distillation_report.json`
 - `reports/distillation_scores.csv`
 - `models/distilled_mobile.pkl`
-- `artifacts/distilled_linear_contract.json` (for linear champion)
+- `artifacts/distilled_linear_contract.json` (for linear champion, includes calibrated `decision_threshold`)
 
 Phase 9:
 - `reports/robustness_metrics.json`
@@ -148,4 +148,5 @@ Phase 9:
 ## 5) Notes
 
 - `step8` auto-falls back to `models/mobile_champion.pkl` if the transfer teacher has zero feature overlap with train/test splits.
+- `step8` calibrates threshold using out-of-fold train probabilities (time-aware splits), then applies a safety gate; if gain/shift is unstable it falls back to `0.5` before writing the distilled linear contract.
 - You may see sklearn version warnings when loading older pickles; retraining teacher artifacts in the current environment removes this.

@@ -83,6 +83,9 @@ Key outputs:
 - `reports/mobile_model_scores.csv`
 - `artifacts/mobile_linear_contract.json`
 
+Distillation (phase 8) also exports:
+- `artifacts/distilled_linear_contract.json` with calibrated `decision_threshold`
+
 ## Rebuild Full Data Pipeline (Optional)
 
 ```bash
@@ -137,6 +140,12 @@ Simulator cannot fetch real Apple Health/Watch data, but you can test full app f
 3. Tap `Run On-Device Prediction`.
 
 For real HealthKit fetch from Apple Watch data, run on a physical iPhone.
+
+App runtime notes:
+- Uses on-device inference only (no server call).
+- Excludes user-entered Health records for night feature extraction.
+- Prefers Apple Watch-origin samples when those sources are present.
+- Includes one-tap `Fetch + Predict` for direct HealthKit-to-prediction flow.
 
 ## Push to GitHub
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import numpy as np
@@ -129,7 +130,38 @@ def load_dataset(path: Path):
     return feature_cols, X, y
 
 
-def predict_labels(model, X: pd.DataFrame) -> np.ndarray:
+def positive_class_index(classes: Any) -> int:
+    classes_arr = np.asarray(classes)
+    classes_list = classes_arr.tolist()
+    if 1 in classes_list:
+        return int(classes_list.index(1))
+    return int(np.argmax(classes_arr))
+
+
+def infer_threshold_from_distilled_contract() -> float | None:
+    contract_path = PROJECT_ROOT / "artifacts" / "distilled_linear_contract.json"
+    if not contract_path.exists():
+        return None
+    try:
+        payload = json.loads(contract_path.read_text())
+        value = payload.get("decision_threshold")
+        if value is None:
+            return None
+        value = float(value)
+        if not np.isfinite(value):
+            return None
+        return value
+    except Exception:
+        return None
+
+
+def predict_labels(model, X: pd.DataFrame, decision_threshold: float | None = None) -> np.ndarray:
+    if decision_threshold is not None and hasattr(model, "predict_proba"):
+        proba = model.predict_proba(X)
+        classes = getattr(model, "classes_", np.array([0, 1]))
+        pos_idx = positive_class_index(classes)
+        preds = (proba[:, pos_idx] >= float(decision_threshold)).astype(int)
+        return np.asarray(preds)
     preds = model.predict(X)
     return np.asarray(preds)
 
@@ -192,14 +224,14 @@ def corrupt_noise(X: pd.DataFrame, level: float, seed: int = 42) -> pd.DataFrame
     return out
 
 
-def corruption_sweep(model, X: pd.DataFrame, y: pd.Series):
+def corruption_sweep(model, X: pd.DataFrame, y: pd.Series, decision_threshold: float | None = None):
     missing_levels = [0.0, 0.1, 0.3, 0.5]
     noise_levels = [0.0, 0.1, 0.3, 0.5]
     results = {"missingness": [], "noise": []}
 
     for lvl in missing_levels:
         corrupted = corrupt_missingness(X, lvl)
-        preds = predict_labels(model, corrupted)
+        preds = predict_labels(model, corrupted, decision_threshold=decision_threshold)
         results["missingness"].append(
             {
                 "level": lvl,
@@ -209,7 +241,7 @@ def corruption_sweep(model, X: pd.DataFrame, y: pd.Series):
 
     for lvl in noise_levels:
         corrupted = corrupt_noise(X, lvl)
-        preds = predict_labels(model, corrupted)
+        preds = predict_labels(model, corrupted, decision_threshold=decision_threshold)
         results["noise"].append(
             {
                 "level": lvl,
@@ -225,6 +257,11 @@ def main():
     parser.add_argument("--model", type=Path, help="Optional model path override")
     parser.add_argument("--data", default=DATASET_PATH, type=Path, help="Test split CSV")
     parser.add_argument("--bootstrap", type=int, default=1000, help="Bootstrap samples")
+    parser.add_argument(
+        "--decision-threshold",
+        type=float,
+        help="Optional probability threshold override for binary models with predict_proba",
+    )
     args = parser.parse_args()
 
     model_path = pick_model_path(args.model)
@@ -234,16 +271,28 @@ def main():
     repair_loaded_sklearn_object(model)
     feature_cols, X, y = load_dataset(args.data)
 
-    y_pred = predict_labels(model, X)
+    decision_threshold = args.decision_threshold
+    threshold_source = "default_model_predict"
+    if decision_threshold is None and str(model_path).endswith("models/distilled_mobile.pkl"):
+        inferred = infer_threshold_from_distilled_contract()
+        if inferred is not None:
+            decision_threshold = inferred
+            threshold_source = "artifacts/distilled_linear_contract.json"
+    elif decision_threshold is not None:
+        threshold_source = "cli_override"
+
+    y_pred = predict_labels(model, X, decision_threshold=decision_threshold)
     clean_f1 = weighted_f1(y, y_pred)
     ci = bootstrap_ci(y, y_pred, n_bootstrap=args.bootstrap)
-    robustness = corruption_sweep(model, X, y)
+    robustness = corruption_sweep(model, X, y, decision_threshold=decision_threshold)
 
     payload = {
         "model_path": str(model_path),
         "dataset_path": str(args.data),
         "n_rows": int(len(X)),
         "n_features": int(len(feature_cols)),
+        "decision_threshold": decision_threshold,
+        "decision_threshold_source": threshold_source,
         "clean_weighted_f1": clean_f1,
         "bootstrap": {
             "n_bootstrap": int(args.bootstrap),
@@ -262,6 +311,7 @@ def main():
         f"- Model: `{model_path}`",
         f"- Test rows: `{len(X)}`",
         f"- Features: `{len(feature_cols)}`",
+        f"- Decision threshold: `{decision_threshold if decision_threshold is not None else 'model default'}` ({threshold_source})",
         f"- Clean weighted F1: `{clean_f1:.3f}`",
         f"- Bootstrap 95% CI: `{ci['ci95_low']:.3f}` to `{ci['ci95_high']:.3f}`",
         "",

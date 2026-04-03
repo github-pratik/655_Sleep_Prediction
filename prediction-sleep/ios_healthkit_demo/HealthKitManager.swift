@@ -4,6 +4,7 @@ import HealthKit
 struct NightSleepSummary {
     let start: Date
     let end: Date
+    let sourceSummary: String
     let features: [String: Double]
 }
 
@@ -13,6 +14,9 @@ struct QuantityStats {
     let max: Double
     let median: Double
     let std: Double
+    let sampleCount: Int
+    let sourceNames: [String]
+    let watchSampleRatio: Double
 }
 
 final class HealthKitManager: ObservableObject {
@@ -20,6 +24,7 @@ final class HealthKitManager: ObservableObject {
 
     @Published var authorizationGranted = false
     @Published var statusMessage = "Health access not requested"
+    @Published var lastDataOrigin = "Unknown"
 
     private let metricDescriptors: [(prefix: String, id: HKQuantityTypeIdentifier, unit: HKUnit)] = [
         ("hr", .heartRate, HKUnit.count().unitDivided(by: .minute())),
@@ -78,6 +83,8 @@ final class HealthKitManager: ObservableObject {
                 var features = summary.features
                 let group = DispatchGroup()
                 let lock = NSLock()
+                var metricOrigins: [String] = []
+                var metricsUsingWatch = 0
 
                 for metric in self.metricDescriptors {
                     group.enter()
@@ -94,6 +101,12 @@ final class HealthKitManager: ObservableObject {
                             features["\(metric.prefix)_max"] = stats.max
                             features["\(metric.prefix)_median"] = stats.median
                             features["\(metric.prefix)_std"] = stats.std
+                            if stats.watchSampleRatio > 0 {
+                                metricsUsingWatch += 1
+                            }
+                            let sourceLabel = stats.sourceNames.isEmpty ? "unknown source" : stats.sourceNames.joined(separator: ", ")
+                            let pct = Int((stats.watchSampleRatio * 100.0).rounded())
+                            metricOrigins.append("\(metric.prefix):\(sourceLabel) watch=\(pct)% n=\(stats.sampleCount)")
                             lock.unlock()
                         }
                         group.leave()
@@ -101,11 +114,28 @@ final class HealthKitManager: ObservableObject {
                 }
 
                 group.notify(queue: .main) {
-                    self.statusMessage = "Latest night features fetched"
+                    self.lastDataOrigin = [
+                        summary.sourceSummary,
+                        "watch-priority metrics \(metricsUsingWatch)/\(self.metricDescriptors.count)"
+                    ].joined(separator: " | ")
+                    self.statusMessage = metricOrigins.isEmpty
+                        ? "Latest night features fetched"
+                        : "Latest night features fetched (\(metricOrigins.joined(separator: " | ")))"
                     completion(.success(features))
                 }
             }
         }
+    }
+
+    private func isWatchSource(_ source: HKSource) -> Bool {
+        let name = source.name.lowercased()
+        let bundle = source.bundleIdentifier.lowercased()
+        return name.contains("watch") || bundle.contains("watch")
+    }
+
+    private func isUserEntered(_ metadata: [String: Any]?) -> Bool {
+        guard let metadata else { return false }
+        return (metadata[HKMetadataKeyWasUserEntered] as? Bool) ?? false
     }
 
     private func fetchLatestSleepSummary(completion: @escaping (Result<NightSleepSummary, Error>) -> Void) {
@@ -135,10 +165,13 @@ final class HealthKitManager: ObservableObject {
                 return
             }
 
+            let nonUserSamples = sleepSamples.filter { !self.isUserEntered($0.metadata) }
+            let usableSleep = nonUserSamples.isEmpty ? sleepSamples : nonUserSamples
+
             // Group samples by "night date" using a -6 hour shift.
             let calendar = Calendar.current
             var grouped: [Date: [HKCategorySample]] = [:]
-            for sample in sleepSamples {
+            for sample in usableSleep {
                 let shifted = calendar.date(byAdding: .hour, value: -6, to: sample.startDate) ?? sample.startDate
                 let nightKey = calendar.startOfDay(for: shifted)
                 grouped[nightKey, default: []].append(sample)
@@ -149,8 +182,11 @@ final class HealthKitManager: ObservableObject {
                 return
             }
 
-            let sleepStart = nightSamples.map(\.startDate).min() ?? latestNight
-            let sleepEnd = nightSamples.map(\.endDate).max() ?? latestNight
+            let watchNight = nightSamples.filter { self.isWatchSource($0.sourceRevision.source) }
+            let selectedNightSamples = watchNight.isEmpty ? nightSamples : watchNight
+
+            let sleepStart = selectedNightSamples.map(\.startDate).min() ?? latestNight
+            let sleepEnd = selectedNightSamples.map(\.endDate).max() ?? latestNight
 
             var inBedMinutes = 0.0
             var remMinutes = 0.0
@@ -158,7 +194,7 @@ final class HealthKitManager: ObservableObject {
             var coreMinutes = 0.0
             var asleepMinutes = 0.0
 
-            for sample in nightSamples {
+            for sample in selectedNightSamples {
                 let value = sample.value
                 let minutes = sample.endDate.timeIntervalSince(sample.startDate) / 60.0
                 if minutes <= 0 { continue }
@@ -202,7 +238,21 @@ final class HealthKitManager: ObservableObject {
                 "core_pct": corePct
             ]
 
-            completion(.success(NightSleepSummary(start: sleepStart, end: sleepEnd, features: features)))
+            let sleepSources = Array(Set(selectedNightSamples.map { $0.sourceRevision.source.name })).sorted()
+            let sourceSummary = watchNight.isEmpty
+                ? "sleep source: Health app merged"
+                : "sleep source: Apple Watch preferred (\(sleepSources.joined(separator: ", ")))"
+
+            completion(
+                .success(
+                    NightSleepSummary(
+                        start: sleepStart,
+                        end: sleepEnd,
+                        sourceSummary: sourceSummary,
+                        features: features
+                    )
+                )
+            )
         }
 
         healthStore.execute(query)
@@ -227,9 +277,19 @@ final class HealthKitManager: ObservableObject {
             limit: HKObjectQueryNoLimit,
             sortDescriptors: nil
         ) { _, samples, _ in
-            guard let values = (samples as? [HKQuantitySample])?
+            guard let rawSamples = samples as? [HKQuantitySample], !rawSamples.isEmpty else {
+                completion(nil)
+                return
+            }
+
+            let nonUserSamples = rawSamples.filter { !self.isUserEntered($0.metadata) }
+            let usableSamples = nonUserSamples.isEmpty ? rawSamples : nonUserSamples
+            let watchSamples = usableSamples.filter { self.isWatchSource($0.sourceRevision.source) }
+            let selectedSamples = watchSamples.isEmpty ? usableSamples : watchSamples
+            let values = selectedSamples
                 .map({ $0.quantity.doubleValue(for: unit) })
-                .filter({ $0.isFinite }), !values.isEmpty else {
+                .filter({ $0.isFinite })
+            guard !values.isEmpty else {
                 completion(nil)
                 return
             }
@@ -248,8 +308,21 @@ final class HealthKitManager: ObservableObject {
             }()
             let variance = values.reduce(0.0) { $0 + pow($1 - mean, 2) } / count
             let std = sqrt(max(variance, 0))
+            let sourceNames = Array(Set(selectedSamples.map { $0.sourceRevision.source.name })).sorted()
+            let watchRatio = usableSamples.isEmpty ? 0.0 : Double(watchSamples.count) / Double(usableSamples.count)
 
-            completion(QuantityStats(mean: mean, min: minVal, max: maxVal, median: median, std: std))
+            completion(
+                QuantityStats(
+                    mean: mean,
+                    min: minVal,
+                    max: maxVal,
+                    median: median,
+                    std: std,
+                    sampleCount: selectedSamples.count,
+                    sourceNames: sourceNames,
+                    watchSampleRatio: watchRatio
+                )
+            )
         }
 
         healthStore.execute(query)
