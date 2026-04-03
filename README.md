@@ -67,7 +67,7 @@ scripts/run_phases_6_9.sh --skip-latency
 ```
 
 Useful references:
-- [Sleep-EDF (PhysioNet)](https://physionet.org/content/sleep-edfx/)
+- [SleepAccel (PhysioNet)](https://physionet.org/content/sleep-accel/)
 - [PPG-DaLiA (UCI)](https://archive.ics.uci.edu/ml/datasets/PPG-DaLiA)
 
 ## Train Mobile-First Models
