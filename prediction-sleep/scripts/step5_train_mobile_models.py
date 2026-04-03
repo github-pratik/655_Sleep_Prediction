@@ -56,7 +56,16 @@ def load_data(train_path: Path, test_path: Path):
 def encode_labels(y_train, y_test):
     le = LabelEncoder()
     y_train_enc = le.fit_transform(y_train)
-    y_test_enc = le.transform(y_test)
+    try:
+        y_test_enc = le.transform(y_test)
+    except ValueError as exc:
+        train_labels = set(pd.Series(y_train).astype(str))
+        test_labels = set(pd.Series(y_test).astype(str))
+        unseen = sorted(test_labels - train_labels)
+        raise SystemExit(
+            "Test split contains unseen fatigue_label classes not present in train: "
+            f"{unseen}. Re-check split and labels."
+        ) from exc
     return le, y_train_enc, y_test_enc
 
 

@@ -1,5 +1,7 @@
 # CS655 Mobile Collaboration Repo
 
+[![Prediction Sleep Tests](https://github.com/github-pratik/655_Sleep_Prediction/actions/workflows/prediction-sleep-tests.yml/badge.svg)](https://github.com/github-pratik/655_Sleep_Prediction/actions/workflows/prediction-sleep-tests.yml)
+
 This folder is a GitHub-ready collaboration copy of the project.
 
 ## Included
@@ -35,6 +37,39 @@ python -m pip install -r requirements.txt
 
 All runtime commands below should be executed after activating `.venv`.
 
+## Public Datasets (Manual Download Required)
+
+Yes, download SleepAccel and PPG-DaLiA manually first.
+This repo does not auto-download public datasets because dataset terms and folder layouts can vary.
+
+Recommended local layout:
+
+```bash
+prediction-sleep/data/public/SleepAccel/
+prediction-sleep/data/public/PPG-DaLiA/
+```
+
+Then run the phased pipeline with explicit paths:
+
+```bash
+cd prediction-sleep
+chmod +x scripts/run_phases_6_9.sh
+scripts/run_phases_6_9.sh \
+  --sleepaccel-root data/public/SleepAccel \
+  --ppg-dalia-root data/public/PPG-DaLiA \
+  --skip-latency
+```
+
+If you do not have public datasets yet, you can still run phases 7 to 9:
+
+```bash
+scripts/run_phases_6_9.sh --skip-latency
+```
+
+Useful references:
+- [Sleep-EDF (PhysioNet)](https://physionet.org/content/sleep-edfx/)
+- [PPG-DaLiA (UCI)](https://archive.ics.uci.edu/ml/datasets/PPG-DaLiA)
+
 ## Train Mobile-First Models
 
 ```bash
@@ -55,6 +90,22 @@ python scripts/step3_merge_labels.py
 python scripts/step4_time_split.py
 python scripts/step5_train_mobile_models.py --skip-plots
 ```
+
+## Research Pipeline (Phases 6 to 9)
+
+Single-command runner:
+
+```bash
+cd prediction-sleep
+scripts/run_phases_6_9.sh --skip-latency
+```
+
+Detailed phase docs:
+- `prediction-sleep/docs/PHASED_EXECUTION_RUNBOOK.md`
+- `prediction-sleep/PUBLIC_DATA_MOBILE_RESEARCH_PLAN.md`
+
+Reproducible environment lock:
+- `prediction-sleep/requirements.lock.txt`
 
 ## Run Prediction App (Desktop)
 

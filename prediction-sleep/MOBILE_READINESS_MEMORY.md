@@ -13,6 +13,10 @@ Use it to track:
 - What changed each iteration and why
 - Remaining blockers before a mobile-computing quality demo
 
+## Linked Strategy Docs
+
+- `PUBLIC_DATA_MOBILE_RESEARCH_PLAN.md` for a concrete plan to use public datasets while keeping on-device/mobile constraints.
+
 ## Mobile Constraint Targets
 
 - On-device inference only (no cloud dependency at prediction time)

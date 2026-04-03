@@ -29,3 +29,21 @@ apple_health_export/
 raw_data/
 export.xml
 export_cda.xml
+
+# Local logs and temp files
+error.log
+excalidraw.log
+prediction-sleep/logs/
+
+# Generated research artifacts (reproducible from scripts)
+prediction-sleep/artifacts/public_pretrain/
+prediction-sleep/models/*distilled*.pkl
+prediction-sleep/models/*transfer*.pkl
+prediction-sleep/models/*baseline*.pkl
+prediction-sleep/models/*combined*.pkl
+prediction-sleep/reports/distillation_*.json
+prediction-sleep/reports/distillation_*.csv
+prediction-sleep/reports/public_transfer_*.json
+prediction-sleep/reports/public_transfer_*.csv
+prediction-sleep/reports/robustness_metrics.json
+prediction-sleep/reports/research_summary.md
