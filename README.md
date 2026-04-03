@@ -57,6 +57,7 @@ chmod +x scripts/run_phases_6_9.sh
 scripts/run_phases_6_9.sh \
   --sleepaccel-root dataset/public/SleepAccel \
   --ppg-dalia-root dataset/public/PPG-DaLiA \
+  --ppg-max-subjects 3 \
   --skip-latency
 ```
 

@@ -39,6 +39,7 @@ chmod +x scripts/run_phases_6_9.sh
 scripts/run_phases_6_9.sh \
   --sleepaccel-root dataset/public/SleepAccel \
   --ppg-dalia-root dataset/public/PPG-DaLiA \
+  --ppg-max-subjects 3 \
   --skip-latency
 ```
 
@@ -57,6 +58,18 @@ scripts/run_phases_6_9.sh --skip-latency
 
 Logs are written to:
 `logs/phases_6_9/<timestamp>/`
+
+### Archive or remove unwanted run files
+
+Create a zip archive of logs + redundant PPG `data.zip`:
+```bash
+scripts/archive_cleanup.sh
+```
+
+Archive and then delete those files:
+```bash
+scripts/archive_cleanup.sh --delete
+```
 
 ### Phase 6: public pretraining
 

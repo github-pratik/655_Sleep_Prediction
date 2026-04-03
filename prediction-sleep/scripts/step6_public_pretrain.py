@@ -56,6 +56,12 @@ def parse_args() -> argparse.Namespace:
         help="Window size in seconds for standardized feature aggregation.",
     )
     parser.add_argument(
+        "--ppg-max-subjects",
+        type=int,
+        default=3,
+        help="Maximum number of PPG-DaLiA subjects to process (keeps runtime bounded).",
+    )
+    parser.add_argument(
         "--latent-dim",
         type=int,
         default=8,
@@ -83,6 +89,7 @@ def main() -> None:
         ppg_dalia_roots=args.ppg_dalia_root,
         search_root=args.search_root,
         window_sec=args.window_sec,
+        ppg_max_subjects=args.ppg_max_subjects,
     )
 
     if combined.empty:
@@ -145,6 +152,7 @@ def main() -> None:
             "sleepaccel_roots": [str(p) for p in args.sleepaccel_root],
             "ppg_dalia_roots": [str(p) for p in args.ppg_dalia_root],
             "search_root": str(args.search_root),
+            "ppg_max_subjects": int(args.ppg_max_subjects),
         },
         "summary": summary,
         "encoder": {

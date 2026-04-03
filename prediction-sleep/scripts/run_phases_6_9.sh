@@ -10,6 +10,7 @@ SEARCH_ROOT="$ROOT"
 BOOTSTRAP=500
 SKIP_LATENCY=0
 SKIP_PLOTS=1
+PPG_MAX_SUBJECTS=3
 LOG_DIR="$LOG_DIR_DEFAULT"
 
 SLEEPACCEL_ROOTS=()
@@ -29,6 +30,7 @@ Options:
   --bootstrap N            Bootstrap samples for step9 (default: 500).
   --skip-latency           Pass --skip-latency to step7.
   --with-plots             Do not pass --skip-plots to step8.
+  --ppg-max-subjects N     Max PPG-DaLiA subjects in step6 (default: 3).
   --log-dir PATH           Override log output directory.
   -h, --help               Show this help.
 
@@ -62,6 +64,10 @@ while [[ $# -gt 0 ]]; do
     --with-plots)
       SKIP_PLOTS=0
       shift
+      ;;
+    --ppg-max-subjects)
+      PPG_MAX_SUBJECTS="$2"
+      shift 2
       ;;
     --log-dir)
       LOG_DIR="$2"
@@ -124,6 +130,7 @@ if [[ $has_sleepaccel -eq 1 || $has_ppg_dalia -eq 1 ]]; then
     "$PYTHON_BIN" "scripts/step6_public_pretrain.py"
     "--search-root" "$SEARCH_ROOT"
     "--output-dir" "artifacts/public_pretrain"
+    "--ppg-max-subjects" "$PPG_MAX_SUBJECTS"
     "--save-window-table"
   )
   for root in ${SLEEPACCEL_ROOTS+"${SLEEPACCEL_ROOTS[@]}"}; do

@@ -17,6 +17,7 @@ venv/
 .ipynb_checkpoints/
 .idea/
 .vscode/
+.expo/
 
 # Xcode
 DerivedData/
@@ -29,14 +30,17 @@ apple_health_export/
 raw_data/
 export.xml
 export_cda.xml
+prediction-sleep/dataset/public/
 
 # Local logs and temp files
 error.log
 excalidraw.log
 prediction-sleep/logs/
+prediction-sleep/archives/
 
 # Generated research artifacts (reproducible from scripts)
 prediction-sleep/artifacts/public_pretrain/
+prediction-sleep/artifacts/distilled_*.json
 prediction-sleep/models/*distilled*.pkl
 prediction-sleep/models/*transfer*.pkl
 prediction-sleep/models/*baseline*.pkl

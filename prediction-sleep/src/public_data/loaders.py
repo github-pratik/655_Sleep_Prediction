@@ -234,7 +234,7 @@ def load_sleepaccel(root: Path, window_sec: int = 30) -> PublicDatasetResult:
     return PublicDatasetResult("sleepaccel", root, table, notes)
 
 
-def load_ppg_dalia(root: Path, window_sec: int = 30) -> PublicDatasetResult:
+def load_ppg_dalia(root: Path, window_sec: int = 30, max_subjects: int | None = 3) -> PublicDatasetResult:
     """Load PPG-DaLiA-like local archives into a standardized window table.
 
     The dataset appears in multiple local formats in the wild. This loader tries:
@@ -257,6 +257,7 @@ def load_ppg_dalia(root: Path, window_sec: int = 30) -> PublicDatasetResult:
 
     windows: list[pd.DataFrame] = []
     notes: list[str] = []
+    allowed_subjects: set[str] = set()
 
     for path in sorted(files):
         lowered = path.name.lower()
@@ -269,9 +270,22 @@ def load_ppg_dalia(root: Path, window_sec: int = 30) -> PublicDatasetResult:
         if not subject_id:
             subject_id = path.parent.name or path.stem
 
+        if max_subjects is not None and max_subjects > 0:
+            if subject_id not in allowed_subjects:
+                if len(allowed_subjects) >= max_subjects:
+                    continue
+                allowed_subjects.add(subject_id)
+
         sample_frame = _read_generic_timeseries(path, subject_id=subject_id)
         if sample_frame.empty or TIME_COL not in sample_frame.columns:
             continue
+
+        if len(sample_frame) > 1_000_000:
+            stride = max(1, int(np.ceil(len(sample_frame) / 1_000_000)))
+            sample_frame = sample_frame.iloc[::stride].reset_index(drop=True)
+            notes.append(
+                f"downsampled {path.name} with stride={stride} to {len(sample_frame)} rows"
+            )
 
         numeric_cols = _numeric_data_columns(sample_frame, exclude={TIME_COL, SUBJECT_COL, DATASET_COL})
         if not numeric_cols:
@@ -328,6 +342,7 @@ def build_public_window_table(
     ppg_dalia_roots: Sequence[Path | str] | None = None,
     search_root: Path | str | None = None,
     window_sec: int = 30,
+    ppg_max_subjects: int | None = 3,
 ) -> tuple[pd.DataFrame, dict]:
     """Load all available public datasets into one standardized table."""
 
@@ -343,7 +358,7 @@ def build_public_window_table(
                 results.append(result)
     if resolved_ppg:
         for root in resolved_ppg:
-            result = load_ppg_dalia(root, window_sec=window_sec)
+            result = load_ppg_dalia(root, window_sec=window_sec, max_subjects=ppg_max_subjects)
             if not result.table.empty:
                 results.append(result)
 
@@ -653,11 +668,22 @@ def _read_mat_frame(path: Path) -> pd.DataFrame:
 
 
 def _read_pickle_frame(path: Path) -> pd.DataFrame:
-    try:
-        with path.open("rb") as fh:
-            payload = pickle.load(fh)
-    except Exception as exc:
-        warnings.warn(f"Failed to read PKL file {path.name}: {exc}")
+    payload = None
+    load_errors: list[str] = []
+    for kwargs in ({}, {"encoding": "latin1"}, {"encoding": "bytes"}):
+        try:
+            with path.open("rb") as fh:
+                payload = pickle.load(fh, **kwargs)
+            break
+        except Exception as exc:
+            mode = "default" if not kwargs else f"encoding={kwargs.get('encoding')}"
+            load_errors.append(f"{mode}: {exc}")
+
+    if payload is None:
+        warnings.warn(
+            f"Failed to read PKL file {path.name}: "
+            + " | ".join(load_errors[:3])
+        )
         return pd.DataFrame()
 
     mapping = _flatten_mapping(payload)

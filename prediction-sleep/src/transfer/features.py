@@ -94,10 +94,10 @@ def load_public_encoder_info(path: Path | None, fallback_feature_order: list[str
         input_feature_order = list(getattr(artifact, "feature_order", []) or [])
 
     if not input_feature_order:
-        if fallback_feature_order is not None:
-            input_feature_order = list(fallback_feature_order)
-        elif hasattr(artifact, "feature_names_in_"):
+        if hasattr(artifact, "feature_names_in_"):
             input_feature_order = [str(c) for c in artifact.feature_names_in_]
+        elif fallback_feature_order is not None:
+            input_feature_order = list(fallback_feature_order)
 
     return PublicEncoderInfo(
         available=True,
