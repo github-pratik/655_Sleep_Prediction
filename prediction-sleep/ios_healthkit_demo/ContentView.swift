@@ -8,6 +8,13 @@ struct ContentView: View {
     @State private var loading = false
 
     private let model = try? FatigueModel()
+    private let isSimulator: Bool = {
+#if targetEnvironment(simulator)
+        true
+#else
+        false
+#endif
+    }()
 
     private let displayFeatureOrder: [String] = [
         "total_sleep_minutes",
@@ -47,6 +54,12 @@ struct ContentView: View {
                         .disabled(!healthKit.authorizationGranted || loading)
                     }
 
+                    Button("Load Demo Data (Simulator Safe)") {
+                        loadDemoFeatures()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(model == nil || loading)
+
                     Button("Run On-Device Prediction") {
                         runPrediction()
                     }
@@ -78,6 +91,8 @@ struct ContentView: View {
             Text("Status")
                 .font(.headline)
             Text("HealthKit: \(healthKit.statusMessage)")
+            Text("Environment: \(isSimulator ? "Simulator (Demo Mode recommended)" : "Device")")
+                .foregroundStyle(.secondary)
             Text(uiMessage)
                 .foregroundStyle(.secondary)
             if loading {
@@ -164,6 +179,53 @@ struct ContentView: View {
         }
         prediction = model.predict(features: features)
         uiMessage = "Prediction ran on-device (no server)."
+    }
+
+    private func loadDemoFeatures() {
+        guard let model else {
+            uiMessage = "Model contract not loaded."
+            return
+        }
+
+        var demo = model.contract.imputerMedian
+        demo["total_sleep_minutes"] = 415.0
+        demo["asleep_minutes"] = 415.0
+        demo["in_bed_minutes"] = 450.0
+        demo["sleep_efficiency"] = 415.0 / 450.0
+        demo["rem_minutes"] = 92.0
+        demo["deep_minutes"] = 74.0
+        demo["core_minutes"] = 249.0
+        demo["rem_pct"] = 92.0 / 415.0
+        demo["deep_pct"] = 74.0 / 415.0
+        demo["core_pct"] = 249.0 / 415.0
+
+        demo["hr_mean"] = 64.0
+        demo["hr_min"] = 52.0
+        demo["hr_max"] = 78.0
+        demo["hr_median"] = 63.0
+        demo["hr_std"] = 4.1
+
+        demo["hrv_mean"] = 58.0
+        demo["hrv_min"] = 42.0
+        demo["hrv_max"] = 88.0
+        demo["hrv_median"] = 55.0
+        demo["hrv_std"] = 10.5
+
+        demo["resp_mean"] = 15.2
+        demo["resp_min"] = 13.4
+        demo["resp_max"] = 18.1
+        demo["resp_median"] = 15.1
+        demo["resp_std"] = 0.9
+
+        demo["spo2_mean"] = 0.982
+        demo["spo2_min"] = 0.967
+        demo["spo2_max"] = 0.992
+        demo["spo2_median"] = 0.982
+        demo["spo2_std"] = 0.004
+
+        features = demo
+        prediction = nil
+        uiMessage = "Loaded demo features locally. Now tap \"Run On-Device Prediction\"."
     }
 
     private func format(_ value: Double?) -> String {

@@ -36,6 +36,20 @@ Notes:
 - The project already includes HealthKit entitlement and usage descriptions.
 - HealthKit data is unavailable in iOS simulator, so use a physical iPhone.
 
+## Simulator Testing Mode
+
+You can still test app flow in Simulator:
+1. Run the app in iOS Simulator.
+2. Tap **Load Demo Data (Simulator Safe)**.
+3. Tap **Run On-Device Prediction**.
+
+This validates:
+- UI flow
+- Local preprocessing/inference path
+- Prediction rendering
+
+Use physical iPhone for real HealthKit fetch.
+
 ## What Data Is Read
 
 - Sleep analysis (`HKCategoryTypeIdentifierSleepAnalysis`)
@@ -51,4 +65,3 @@ The app fetches the latest night block (using a night-key shift), computes summa
 - Apple Watch data appears in HealthKit after sync to iPhone.
 - If no sleep data exists for the recent window, fetch will fail until data is present.
 - For production, add stronger error handling and background refresh scheduling.
-
