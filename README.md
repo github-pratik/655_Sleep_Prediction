@@ -9,6 +9,8 @@ This folder is a GitHub-ready collaboration copy of the project.
   - Parsed/engineered datasets (`parsed_tables/`, `dataset/`)
   - Trained baseline models (`models/`)
   - Reports and metrics (`reports/`)
+  - Implementation references (`docs/references/`)
+  - Reusable local skills (`skills/`)
   - App and CLI (`app/`, `predict.py`)
   - Project memory docs, including mobile-readiness memory
 - `docs/`

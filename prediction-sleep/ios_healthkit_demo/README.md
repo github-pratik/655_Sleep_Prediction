@@ -73,3 +73,10 @@ The app fetches the latest night block (using a night-key shift), computes summa
 - Apple Watch data appears in HealthKit after sync to iPhone.
 - If no sleep data exists for the recent window, fetch will fail until data is present.
 - For production, add stronger error handling and background refresh scheduling.
+
+## References and Skill
+
+- External reference:
+  - `docs/references/HEALTHKIT_SWIFTUI_REFERENCE.md`
+- Local skill:
+  - `skills/ios-healthkit-integration/SKILL.md`

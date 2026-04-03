@@ -138,6 +138,11 @@ Deliverables:
   - accuracy reference model (RF)
   - mobile-eligible model (LogReg-first)
 
+2026-04-03:
+- Decision: include a HealthKit SwiftUI implementation reference and local skill artifact for team onboarding.
+- Reference added: `docs/references/HEALTHKIT_SWIFTUI_REFERENCE.md`
+- Skill added: `skills/ios-healthkit-integration/SKILL.md`
+
 ## Iteration Log Template
 
 Append entries below each time work is completed.
