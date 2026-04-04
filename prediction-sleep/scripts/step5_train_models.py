@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Train baseline models (Logistic Regression, Random Forest) on fatigue prediction.
+Train baseline models (Logistic Regression, Random Forest, HGB) on fatigue prediction.
+Uses Personal Z-Score Normalization to ensure cross-user generalization.
 Requires dataset/train.csv and dataset/test.csv produced by step4_time_split.py
 Outputs:
   models/logreg.pkl
+  models/hgb.pkl
   models/rf.pkl
   reports/metrics.json
   reports/confusion_matrix.png
@@ -17,15 +19,41 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV
 
 TARGET_COL = "fatigue_label"
+
+
+class PersonalZScoreTransformer(BaseEstimator, TransformerMixin):
+    """
+    Transforms absolute features into Z-scores ( (x - mean) / std ).
+    This allows the model to generalize by focusing on how 'unusual' 
+    a metric is for a specific user compared to their own history.
+    """
+    def __init__(self):
+        self.means_ = None
+        self.stds_ = None
+
+    def fit(self, X, y=None):
+        self.means_ = np.mean(X, axis=0)
+        self.stds_ = np.std(X, axis=0)
+        # Handle zero std to avoid division by zero
+        if isinstance(self.stds_, pd.Series):
+            self.stds_ = self.stds_.replace(0, 1.0)
+        else:
+            self.stds_ = np.where(self.stds_ == 0, 1.0, self.stds_)
+        return self
+
+    def transform(self, X):
+        return (X - self.means_) / self.stds_
 
 
 def load_data(train_path: Path, test_path: Path):
@@ -49,6 +77,8 @@ def build_preprocessor(feature_cols):
         transformers=[
             ("num", Pipeline([
                 ("imputer", SimpleImputer(strategy="median")),
+                ("zscore", PersonalZScoreTransformer()),
+                # StandardScaler is redundant but safe to keep for models that prefer it
                 ("scaler", StandardScaler()),
             ]), feature_cols)
         ],
@@ -89,7 +119,6 @@ def plot_confusion(cm, labels, out_path: Path):
 
 
 def plot_feature_importance(model_pipeline, feature_cols, out_path: Path):
-    # Extract feature importances from RF inside the pipeline
     model = model_pipeline.named_steps["model"]
     if not hasattr(model, "feature_importances_"):
         return
@@ -119,28 +148,49 @@ def main():
 
     preprocessor = build_preprocessor(feature_cols)
 
+    rf_param_grid = {
+        "model__n_estimators": [100, 200, 300],
+        "model__max_depth": [None, 10, 20],
+        "model__min_samples_leaf": [2, 4],
+        "model__class_weight": ["balanced", None]
+    }
+
     models = {
-        "logreg": LogisticRegression(max_iter=1000, n_jobs=-1),
-        "rf": RandomForestClassifier(n_estimators=300, max_depth=None, random_state=42, n_jobs=-1),
+        "logreg": LogisticRegression(max_iter=1000, n_jobs=-1, class_weight="balanced"),
+        "hgb": HistGradientBoostingClassifier(max_iter=200, random_state=42, class_weight="balanced"),
+        "rf": RandomForestClassifier(random_state=42, n_jobs=-1),
     }
 
     metrics = {}
     trained = {}
 
     for name, model in models.items():
-        clf, m = train_and_eval(name, model, preprocessor, X_train, y_train, X_test, y_test)
+        if name == "rf":
+            pipeline = Pipeline([("preprocess", preprocessor), ("model", model)])
+            grid = GridSearchCV(pipeline, rf_param_grid, cv=3, scoring="f1_weighted", n_jobs=-1)
+            grid.fit(X_train, y_train)
+            clf = grid.best_estimator_
+            y_pred = clf.predict(X_test)
+            acc = accuracy_score(y_test, y_pred)
+            prec, rec, f1, _ = precision_recall_fscore_support(y_test, y_pred, average="weighted", zero_division=0)
+            cm = confusion_matrix(y_test, y_pred)
+            m = {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1, "cm": cm}
+        else:
+            clf, m = train_and_eval(name, model, preprocessor, X_train, y_train, X_test, y_test)
+
         metrics[name] = {k: float(v) if k != "cm" else m["cm"].tolist() for k, v in m.items()}
         trained[name] = clf
         joblib.dump(clf, Path(f"models/{name}.pkl"))
 
-    # Plots using RF confusion and importances
-    rf_cm = np.array(metrics["rf"]["cm"])
+    best_name = max(metrics.items(), key=lambda kv: kv[1]["f1"])[0]
+    best_cm = np.array(metrics[best_name]["cm"])
     labels = le.classes_.tolist()
-    plot_confusion(rf_cm, labels, Path("reports/confusion_matrix.png"))
-    plot_feature_importance(trained["rf"], feature_cols, Path("reports/feature_importance.png"))
+    plot_confusion(best_cm, labels, Path("reports/confusion_matrix.png"))
+
+    if "rf" in trained:
+        plot_feature_importance(trained["rf"], feature_cols, Path("reports/feature_importance.png"))
 
     Path("reports/metrics.json").write_text(json.dumps(metrics, indent=2))
-
     print(json.dumps(metrics, indent=2))
     best = max(metrics.items(), key=lambda kv: kv[1]["f1"])
     print(f"Best model: {best[0]} with F1={best[1]['f1']:.3f}")

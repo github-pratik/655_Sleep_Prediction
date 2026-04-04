@@ -26,6 +26,10 @@ RECORD_MAP = {
     "hrv": "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
     "resp": "HKQuantityTypeIdentifierRespiratoryRate",
     "spo2": "HKQuantityTypeIdentifierOxygenSaturation",
+    "steps": "HKQuantityTypeIdentifierStepCount",
+    "energy": "HKQuantityTypeIdentifierActiveEnergyBurned",
+    "effort": "HKQuantityTypeIdentifierPhysicalEffort",
+    "resting_hr": "HKQuantityTypeIdentifierRestingHeartRate",
 }
 
 
@@ -52,44 +56,10 @@ def parse(input_path: Path, out_dir: Path) -> None:
         rtype = record.get("type")
         counters[rtype] += 1
 
-        if rtype == RECORD_MAP["sleep"]:
-            buckets["sleep"].append({
-                "uuid": record.get("uuid"),
-                "sourceName": record.get("sourceName"),
-                "creationDate": record.get("creationDate"),
-                "startDate": record.get("startDate"),
-                "endDate": record.get("endDate"),
-                "value": record.get("value"),
-            })
-        elif rtype == RECORD_MAP["hr"]:
-            buckets["hr"].append({
-                "uuid": record.get("uuid"),
-                "sourceName": record.get("sourceName"),
-                "unit": record.get("unit"),
-                "startDate": record.get("startDate"),
-                "endDate": record.get("endDate"),
-                "value": record.get("value"),
-            })
-        elif rtype == RECORD_MAP["hrv"]:
-            buckets["hrv"].append({
-                "uuid": record.get("uuid"),
-                "sourceName": record.get("sourceName"),
-                "unit": record.get("unit"),
-                "startDate": record.get("startDate"),
-                "endDate": record.get("endDate"),
-                "value": record.get("value"),
-            })
-        elif rtype == RECORD_MAP["resp"]:
-            buckets["resp"].append({
-                "uuid": record.get("uuid"),
-                "sourceName": record.get("sourceName"),
-                "unit": record.get("unit"),
-                "startDate": record.get("startDate"),
-                "endDate": record.get("endDate"),
-                "value": record.get("value"),
-            })
-        elif rtype == RECORD_MAP["spo2"]:
-            buckets["spo2"].append({
+        if rtype in RECORD_MAP.values():
+            # Find the internal key for this type
+            key = [k for k, v in RECORD_MAP.items() if v == rtype][0]
+            buckets[key].append({
                 "uuid": record.get("uuid"),
                 "sourceName": record.get("sourceName"),
                 "unit": record.get("unit"),
