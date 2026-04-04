@@ -1,1 +1,1 @@
-rf_small_n96_d8
+sgd_log_alpha0_0001

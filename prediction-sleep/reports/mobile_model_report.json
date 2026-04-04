@@ -1,59 +1,59 @@
 {
   "summary": {
-    "num_candidates": 9,
-    "num_mobile_eligible": 9,
-    "champion": "rf_small_n96_d8",
+    "num_candidates": 11,
+    "num_mobile_eligible": 7,
+    "champion": "sgd_log_alpha0_0001",
     "champion_model_path": "models/mobile_champion.pkl",
-    "best_linear_model": "logreg_c0_1",
+    "best_linear_model": "sgd_log_alpha0_0001",
     "linear_contract_exported": true
   },
   "champion_metrics": {
-    "model_name": "rf_small_n96_d8",
+    "model_name": "sgd_log_alpha0_0001",
     "eligible_mobile": true,
-    "size_kb": 325.3232421875,
-    "single_pred_p50_ms": 14.73124999999964,
-    "single_pred_p95_ms": 15.142781100000224,
-    "batch_pred_p50_ms": 14.609770999999938,
-    "accuracy": 0.5185185185185185,
-    "weighted_f1": 0.5165261813537675,
-    "macro_f1": 0.5158620689655172,
-    "kappa": 0.03471983499484366,
+    "size_kb": 10.548828125,
+    "single_pred_p50_ms": 3.419083499466069,
+    "single_pred_p95_ms": 5.621695650279435,
+    "batch_pred_p50_ms": 3.81668800037005,
+    "accuracy": 0.49074074074074076,
+    "weighted_f1": 0.4906096572763239,
+    "macro_f1": 0.4903474903474903,
+    "kappa": -0.019217570350034352,
     "efficiency_score": 1.0,
-    "mobile_score": 0.589072697714013,
+    "mobile_score": 0.5669461172778492,
     "cm": [
       [
-        24,
-        29
+        25,
+        28
       ],
       [
-        23,
-        32
+        27,
+        28
       ]
     ],
-    "model_path": "models/rf_small_n96_d8.pkl"
+    "model_path": "models/sgd_log_alpha0_0001.pkl"
   },
   "all_models": [
     {
       "model_name": "logreg_c0_1",
       "eligible_mobile": true,
-      "size_kb": 4.994140625,
-      "single_pred_p50_ms": 0.9086670000000296,
-      "single_pred_p95_ms": 0.9530878000001186,
-      "batch_pred_p50_ms": 0.9340419999999128,
+      "size_kb": 10.306640625,
+      "single_pred_p50_ms": 2.276395499393402,
+      "single_pred_p95_ms": 3.2222915495367483,
+      "batch_pred_p50_ms": 2.3987494996617897,
       "accuracy": 0.48148148148148145,
-      "weighted_f1": 0.48148148148148145,
-      "macro_f1": 0.48148148148148145,
-      "kappa": -0.03668152211175868,
+      "weighted_f1": 0.4683127572016461,
+      "macro_f1": 0.4666666666666667,
+      "kappa": -0.04311831666091748,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5592859228786551,
+      "mobile_score": 0.5493381427113366,
       "cm": [
         [
-          26,
-          27
+          17,
+          36
         ],
         [
-          29,
-          26
+          20,
+          35
         ]
       ],
       "model_path": "models/logreg_c0_1.pkl"
@@ -61,24 +61,24 @@
     {
       "model_name": "logreg_c0_5",
       "eligible_mobile": true,
-      "size_kb": 4.994140625,
-      "single_pred_p50_ms": 0.9078960000001857,
-      "single_pred_p95_ms": 0.951918599999968,
-      "batch_pred_p50_ms": 0.9289375000001154,
-      "accuracy": 0.4537037037037037,
-      "weighted_f1": 0.4520609190683939,
-      "macro_f1": 0.45253028610705387,
-      "kappa": -0.09034907597535935,
+      "size_kb": 10.306640625,
+      "single_pred_p50_ms": 2.7271875005681068,
+      "single_pred_p95_ms": 5.416321349821372,
+      "batch_pred_p50_ms": 2.521958000215818,
+      "accuracy": 0.49074074074074076,
+      "weighted_f1": 0.4820594263290303,
+      "macro_f1": 0.48072383949645947,
+      "kappa": -0.023432115782219043,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5347368677055229,
+      "mobile_score": 0.5604838517217692,
       "cm": [
         [
-          27,
-          26
+          19,
+          34
         ],
         [
-          33,
-          22
+          21,
+          34
         ]
       ],
       "model_path": "models/logreg_c0_5.pkl"
@@ -86,24 +86,24 @@
     {
       "model_name": "logreg_c1_0",
       "eligible_mobile": true,
-      "size_kb": 4.994140625,
-      "single_pred_p50_ms": 0.9081250000000374,
-      "single_pred_p95_ms": 0.9753524500000443,
-      "batch_pred_p50_ms": 0.9276040000001373,
-      "accuracy": 0.4351851851851852,
-      "weighted_f1": 0.4303577081354859,
-      "macro_f1": 0.43123543123543123,
-      "kappa": -0.12576896787423086,
+      "size_kb": 10.306640625,
+      "single_pred_p50_ms": 3.019687499545398,
+      "single_pred_p95_ms": 6.004218750058498,
+      "batch_pred_p50_ms": 2.8444789995774045,
+      "accuracy": 0.4722222222222222,
+      "weighted_f1": 0.4676956693330253,
+      "macro_f1": 0.46668976869098155,
+      "kappa": -0.05918788713007572,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5169493815692646,
+      "mobile_score": 0.5477969919020556,
       "cm": [
         [
-          28,
-          25
+          20,
+          33
         ],
         [
-          36,
-          19
+          24,
+          31
         ]
       ],
       "model_path": "models/logreg_c1_0.pkl"
@@ -111,24 +111,24 @@
     {
       "model_name": "logreg_c2_0",
       "eligible_mobile": true,
-      "size_kb": 4.994140625,
-      "single_pred_p50_ms": 0.9012084999999725,
-      "single_pred_p95_ms": 0.9573956499997927,
-      "batch_pred_p50_ms": 0.9131249999998481,
-      "accuracy": 0.4537037037037037,
-      "weighted_f1": 0.4469359335945145,
-      "macro_f1": 0.44797712899592823,
-      "kappa": -0.08811475409836045,
+      "size_kb": 10.306640625,
+      "single_pred_p50_ms": 2.8592505004780833,
+      "single_pred_p95_ms": 5.2592125000955985,
+      "batch_pred_p50_ms": 2.651916000104393,
+      "accuracy": 0.49074074074074076,
+      "weighted_f1": 0.4879708768597657,
+      "macro_f1": 0.48717948717948717,
+      "kappa": -0.021320495185694677,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5314027262689952,
+      "mobile_score": 0.5648618682108671,
       "cm": [
         [
-          30,
-          23
+          22,
+          31
         ],
         [
-          36,
-          19
+          24,
+          31
         ]
       ],
       "model_path": "models/logreg_c2_0.pkl"
@@ -136,24 +136,24 @@
     {
       "model_name": "sgd_log_alpha0_0001",
       "eligible_mobile": true,
-      "size_kb": 5.220703125,
-      "single_pred_p50_ms": 0.9077914999995329,
-      "single_pred_p95_ms": 0.9629912999996826,
-      "batch_pred_p50_ms": 0.9301245000004066,
-      "accuracy": 0.42592592592592593,
-      "weighted_f1": 0.41143317230273757,
-      "macro_f1": 0.41304347826086957,
-      "kappa": -0.14149335151721787,
+      "size_kb": 10.548828125,
+      "single_pred_p50_ms": 3.419083499466069,
+      "single_pred_p95_ms": 5.621695650279435,
+      "batch_pred_p50_ms": 3.81668800037005,
+      "accuracy": 0.49074074074074076,
+      "weighted_f1": 0.4906096572763239,
+      "macro_f1": 0.4903474903474903,
+      "kappa": -0.019217570350034352,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5026327651418447,
+      "mobile_score": 0.5669461172778492,
       "cm": [
         [
-          31,
-          22
+          25,
+          28
         ],
         [
-          40,
-          15
+          27,
+          28
         ]
       ],
       "model_path": "models/sgd_log_alpha0_0001.pkl"
@@ -161,24 +161,24 @@
     {
       "model_name": "sgd_log_alpha0_0005",
       "eligible_mobile": true,
-      "size_kb": 5.220703125,
-      "single_pred_p50_ms": 0.90543700000012,
-      "single_pred_p95_ms": 0.9486524500000204,
-      "batch_pred_p50_ms": 0.9334795000000007,
-      "accuracy": 0.42592592592592593,
-      "weighted_f1": 0.42592592592592593,
-      "macro_f1": 0.42572898799313896,
-      "kappa": -0.14854202401372207,
+      "size_kb": 10.548828125,
+      "single_pred_p50_ms": 3.48462500005553,
+      "single_pred_p95_ms": 5.420099700768333,
+      "batch_pred_p50_ms": 2.944583000498824,
+      "accuracy": 0.4537037037037037,
+      "weighted_f1": 0.449018324397342,
+      "macro_f1": 0.44797712899592823,
+      "kappa": -0.09635237439779765,
       "efficiency_score": 1.0,
-      "mobile_score": 0.511977955657201,
+      "mobile_score": 0.5319302196880925,
       "cm": [
         [
-          22,
-          31
+          19,
+          34
         ],
         [
-          31,
-          24
+          25,
+          30
         ]
       ],
       "model_path": "models/sgd_log_alpha0_0005.pkl"
@@ -186,74 +186,124 @@
     {
       "model_name": "sgd_log_alpha0_001",
       "eligible_mobile": true,
-      "size_kb": 5.220703125,
-      "single_pred_p50_ms": 0.9032499999999111,
-      "single_pred_p95_ms": 0.9769248499998273,
-      "batch_pred_p50_ms": 0.9232294999996782,
-      "accuracy": 0.42592592592592593,
-      "weighted_f1": 0.42592592592592593,
-      "macro_f1": 0.42592592592592593,
-      "kappa": -0.14775454233801844,
+      "size_kb": 10.548828125,
+      "single_pred_p50_ms": 3.0552084999726503,
+      "single_pred_p95_ms": 7.187479099229676,
+      "batch_pred_p50_ms": 3.814791501099535,
+      "accuracy": 0.46296296296296297,
+      "weighted_f1": 0.46259411884411883,
+      "macro_f1": 0.46222527472527475,
+      "kappa": -0.0751802265705459,
       "efficiency_score": 1.0,
-      "mobile_score": 0.5120665574727967,
+      "mobile_score": 0.5431220395802656,
       "cm": [
         [
           23,
           30
         ],
         [
-          32,
-          23
+          28,
+          27
         ]
       ],
       "model_path": "models/sgd_log_alpha0_001.pkl"
     },
     {
-      "model_name": "rf_small_n64_d6",
-      "eligible_mobile": true,
-      "size_kb": 179.3857421875,
-      "single_pred_p50_ms": 14.935853999999527,
-      "single_pred_p95_ms": 15.415064099999753,
-      "batch_pred_p50_ms": 14.83366649999951,
-      "accuracy": 0.5,
-      "weighted_f1": 0.49267527031740493,
-      "macro_f1": 0.4914544820369724,
-      "kappa": -0.004478126076472799,
-      "efficiency_score": 1.0,
-      "mobile_score": 0.5693537115243832,
+      "model_name": "hgb_d3_i200_lr0_05",
+      "eligible_mobile": false,
+      "size_kb": 222.048828125,
+      "single_pred_p50_ms": 70.45170800029155,
+      "single_pred_p95_ms": 134.10540855011266,
+      "batch_pred_p50_ms": 92.22441650035762,
+      "accuracy": 0.46296296296296297,
+      "weighted_f1": 0.3995627572016461,
+      "macro_f1": 0.3958333333333333,
+      "kappa": -0.08712252690038191,
+      "efficiency_score": 0.65,
+      "mobile_score": 0.44510032694337676,
       "cm": [
         [
-          20,
-          33
+          7,
+          46
         ],
         [
-          21,
-          34
+          12,
+          43
+        ]
+      ],
+      "model_path": "models/hgb_d3_i200_lr0_05.pkl"
+    },
+    {
+      "model_name": "hgb_d4_i250_lr0_05",
+      "eligible_mobile": false,
+      "size_kb": 292.189453125,
+      "single_pred_p50_ms": 54.504333000295446,
+      "single_pred_p95_ms": 84.94387295058914,
+      "batch_pred_p50_ms": 45.499708000534156,
+      "accuracy": 0.46296296296296297,
+      "weighted_f1": 0.3995627572016461,
+      "macro_f1": 0.3958333333333333,
+      "kappa": -0.08712252690038191,
+      "efficiency_score": 0.790196444672938,
+      "mobile_score": 0.4661297936443174,
+      "cm": [
+        [
+          7,
+          46
+        ],
+        [
+          12,
+          43
+        ]
+      ],
+      "model_path": "models/hgb_d4_i250_lr0_05.pkl"
+    },
+    {
+      "model_name": "rf_small_n64_d6",
+      "eligible_mobile": false,
+      "size_kb": 205.2451171875,
+      "single_pred_p50_ms": 19.514374999744177,
+      "single_pred_p95_ms": 40.32968735018582,
+      "batch_pred_p50_ms": 18.935207999675185,
+      "accuracy": 0.4537037037037037,
+      "weighted_f1": 0.4199817101051669,
+      "macro_f1": 0.41728395061728396,
+      "kappa": -0.10242214532871974,
+      "efficiency_score": 0.9463460942743496,
+      "mobile_score": 0.5028527863919328,
+      "cm": [
+        [
+          11,
+          42
+        ],
+        [
+          17,
+          38
         ]
       ],
       "model_path": "models/rf_small_n64_d6.pkl"
     },
     {
       "model_name": "rf_small_n96_d8",
-      "eligible_mobile": true,
-      "size_kb": 325.3232421875,
-      "single_pred_p50_ms": 14.73124999999964,
-      "single_pred_p95_ms": 15.142781100000224,
-      "batch_pred_p50_ms": 14.609770999999938,
-      "accuracy": 0.5185185185185185,
-      "weighted_f1": 0.5165261813537675,
-      "macro_f1": 0.5158620689655172,
-      "kappa": 0.03471983499484366,
-      "efficiency_score": 1.0,
-      "mobile_score": 0.589072697714013,
+      "eligible_mobile": false,
+      "size_kb": 370.7763671875,
+      "single_pred_p50_ms": 19.041104001189524,
+      "single_pred_p95_ms": 30.47659009989729,
+      "batch_pred_p50_ms": 18.740895499831822,
+      "accuracy": 0.42592592592592593,
+      "weighted_f1": 0.4033326707745313,
+      "macro_f1": 0.40107334525939176,
+      "kappa": -0.15647668393782377,
+      "efficiency_score": 0.9808319346503594,
+      "mobile_score": 0.49238300961711806,
       "cm": [
         [
-          24,
-          29
+          12,
+          41
         ],
         [
-          23,
-          32
+          21,
+          34
         ]
       ],
       "model_path": "models/rf_small_n96_d8.pkl"
