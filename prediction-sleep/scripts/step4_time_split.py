@@ -58,7 +58,9 @@ def main():
         "class_balance_train": train_df[target].value_counts(dropna=False).to_dict(),
         "class_balance_test": test_df[target].value_counts(dropna=False).to_dict(),
     }
-    Path("reports/split_stats.json").write_text(json.dumps(stats, indent=2, default=str))
+    report_path = Path("reports/split_stats.json")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(stats, indent=2, default=str))
 
     print(json.dumps(stats, indent=2, default=str))
     print(f"Saved {args.train_out} and {args.test_out}")
