@@ -61,6 +61,7 @@ final class HealthKitManager: ObservableObject {
                 if let error {
                     completion(.failure(error))
                 } else if success {
+                    self?.setupBackgroundDelivery()
                     completion(.success(()))
                 } else {
                     completion(.failure(NSError(domain: "HealthKit", code: 3)))
@@ -125,6 +126,43 @@ final class HealthKitManager: ObservableObject {
                 }
             }
         }
+    }
+
+    private func setupBackgroundDelivery() {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
+        
+        // 1. Tell iOS we want hourly background wake-ups for new sleep data
+        healthStore.enableBackgroundDelivery(for: sleepType, frequency: .hourly) { success, error in
+            if let error = error {
+                print("Failed to enable background delivery: \(error.localizedDescription)")
+            } else {
+                print("Background delivery enabled for hourly sleep updates.")
+            }
+        }
+        
+        // 2. Set up the observer query that iOS triggers when background data arrives
+        let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] query, completionHandler, error in
+            if let error = error {
+                print("Observer query failed: \(error.localizedDescription)")
+                completionHandler()
+                return
+            }
+            
+            // Background fetch triggered! Fetch newest features immediately.
+            self?.fetchLatestNightFeatures { result in
+                switch result {
+                case .success(let features):
+                    print("Background fetch successful. Features ready for prediction.")
+                    // Here you can inject FatigueModel().predict() and save to a local DB
+                case .failure(let error):
+                    print("Background fetch failed: \(error.localizedDescription)")
+                }
+                // Inform iOS we are done so it can suspend the app and save battery
+                completionHandler()
+            }
+        }
+        
+        healthStore.execute(query)
     }
 
     private func isWatchSource(_ source: HKSource) -> Bool {
