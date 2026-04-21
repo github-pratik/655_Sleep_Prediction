@@ -11,14 +11,22 @@
 		290DED7A81920BE60DEB6E26 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D81732E866DF7D62DEEC44 /* ContentView.swift */; };
 		2C2E6BC4682D99F6172F3026 /* SleepFatigueEdgeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B01A50E10CA39CF911CC5D2 /* SleepFatigueEdgeApp.swift */; };
 		7AF93E3CC7316A2140268BE8 /* FatigueModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A922729721FA26590F5F7B8D /* FatigueModel.swift */; };
+		C0A11D15E2F3041526374890A /* ClinicalDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0A11D15E2F3041526374890B /* ClinicalDesign.swift */; };
+		D0A11D15E2F3041526374890A /* PermissionOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A11D15E2F3041526374890B /* PermissionOnboardingView.swift */; };
+		F1A2B3C4D5E6F7089012345A /* mobile_linear_contract.json in Resources */ = {isa = PBXBuildFile; fileRef = E2B3C4D5E6F70890123456AB /* mobile_linear_contract.json */; };
+		F1E2D3C4B5A69788796A5B4C /* StitchChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A69788796A5B4D /* StitchChrome.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2EBFF9A082A2774BAD590D05 /* SleepFatigueEdgeDemo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SleepFatigueEdgeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2EBFF9A082A2774BAD590D05 /* SleepFatigueEdgeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SleepFatigueEdgeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B01A50E10CA39CF911CC5D2 /* SleepFatigueEdgeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepFatigueEdgeApp.swift; sourceTree = "<group>"; };
 		A6D81732E866DF7D62DEEC44 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A922729721FA26590F5F7B8D /* FatigueModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueModel.swift; sourceTree = "<group>"; };
 		B4113928CE9728574415921A /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		C0A11D15E2F3041526374890B /* ClinicalDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalDesign.swift; sourceTree = "<group>"; };
+		D0A11D15E2F3041526374890B /* PermissionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionOnboardingView.swift; sourceTree = "<group>"; };
+		E2B3C4D5E6F70890123456AB /* mobile_linear_contract.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mobile_linear_contract.json; sourceTree = "<group>"; };
+		F1E2D3C4B5A69788796A5B4D /* StitchChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StitchChrome.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -33,10 +41,14 @@
 		89A5C521A20DA22F177198ED /* ios_healthkit_demo */ = {
 			isa = PBXGroup;
 			children = (
+				C0A11D15E2F3041526374890B /* ClinicalDesign.swift */,
 				A6D81732E866DF7D62DEEC44 /* ContentView.swift */,
+				F1E2D3C4B5A69788796A5B4D /* StitchChrome.swift */,
 				A922729721FA26590F5F7B8D /* FatigueModel.swift */,
 				B4113928CE9728574415921A /* HealthKitManager.swift */,
+				D0A11D15E2F3041526374890B /* PermissionOnboardingView.swift */,
 				5B01A50E10CA39CF911CC5D2 /* SleepFatigueEdgeApp.swift */,
+				E2B3C4D5E6F70890123456AB /* mobile_linear_contract.json */,
 			);
 			name = ios_healthkit_demo;
 			path = .;
@@ -58,6 +70,7 @@
 			buildConfigurationList = 73C82320497D2C1722D212F1 /* Build configuration list for PBXNativeTarget "SleepFatigueEdgeDemo" */;
 			buildPhases = (
 				605105D0E629BBBA2304203A /* Sources */,
+				D3C4D5E6F7089012345678BC /* Resources */,
 			);
 			buildRules = (
 			);
@@ -77,7 +90,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					19B2E34B3DF52AAD58B56DBD = {
 						ProvisioningStyle = Automatic;
@@ -103,14 +116,28 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		D3C4D5E6F7089012345678BC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1A2B3C4D5E6F7089012345A /* mobile_linear_contract.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		605105D0E629BBBA2304203A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0A11D15E2F3041526374890A /* ClinicalDesign.swift in Sources */,
 				290DED7A81920BE60DEB6E26 /* ContentView.swift in Sources */,
+				F1E2D3C4B5A69788796A5B4C /* StitchChrome.swift in Sources */,
 				7AF93E3CC7316A2140268BE8 /* FatigueModel.swift in Sources */,
 				00E4BF6A82BCAC6CCE6A7086 /* HealthKitManager.swift in Sources */,
+				D0A11D15E2F3041526374890A /* PermissionOnboardingView.swift in Sources */,
 				2C2E6BC4682D99F6172F3026 /* SleepFatigueEdgeApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -125,6 +152,12 @@
 				CODE_SIGN_ENTITLEMENTS = SleepFatigueEdgeDemo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y8P66J92A2;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sleep Fatigue Edge";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads sleep and vitals to compute fatigue prediction on-device.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write wellness summaries if enabled in future versions.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -176,6 +209,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -202,6 +236,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -247,6 +282,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -266,6 +302,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -280,6 +317,12 @@
 				CODE_SIGN_ENTITLEMENTS = SleepFatigueEdgeDemo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y8P66J92A2;
+				INFOPLIST_KEY_CFBundleDisplayName = "Sleep Fatigue Edge";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads sleep and vitals to compute fatigue prediction on-device.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This app may write wellness summaries if enabled in future versions.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

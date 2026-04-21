@@ -1,1 +1,0 @@
-sgd_distilled_alpha0_0001

@@ -31,19 +31,50 @@ struct FatiguePrediction {
     let logit: Double
 }
 
-enum FatigueModelError: Error {
+enum FatigueModelError: Error, LocalizedError {
     case resourceNotFound(String)
+    case decodeFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .resourceNotFound(let name):
+            return "Could not find \(name).json in the app bundle (check Copy Bundle Resources)."
+        case .decodeFailed(let detail):
+            return "Invalid model contract: \(detail)"
+        }
+    }
 }
 
 final class FatigueModel {
     let contract: LinearContract
 
+    init(contract: LinearContract) {
+        self.contract = contract
+    }
+
     init(resourceName: String = "mobile_linear_contract", bundle: Bundle = .main) throws {
-        guard let url = bundle.url(forResource: resourceName, withExtension: "json") else {
+        let jsonName = "\(resourceName).json"
+        var url = bundle.url(forResource: resourceName, withExtension: "json")
+        if url == nil, let root = bundle.resourceURL {
+            let direct = root.appendingPathComponent(jsonName)
+            if FileManager.default.fileExists(atPath: direct.path) {
+                url = direct
+            }
+        }
+        guard let url else {
             throw FatigueModelError.resourceNotFound(resourceName)
         }
-        let data = try Data(contentsOf: url)
-        contract = try JSONDecoder().decode(LinearContract.self, from: data)
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            throw FatigueModelError.resourceNotFound(resourceName)
+        }
+        do {
+            contract = try JSONDecoder().decode(LinearContract.self, from: data)
+        } catch {
+            throw FatigueModelError.decodeFailed(error.localizedDescription)
+        }
     }
 
     func completeFeatures(_ raw: [String: Double]) -> [String: Double] {

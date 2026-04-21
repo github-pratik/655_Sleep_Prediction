@@ -1,5 +1,15 @@
 # iOS HealthKit Edge Demo
 
+## UI source of truth (Stitch exports)
+
+Pixel reference and design tokens for this app live in:
+
+**[`../stitch_cs655_project/`](../stitch_cs655_project/)**
+
+That folder contains Stitch-generated HTML (Tailwind + DESIGN.md). When changing SwiftUI layout or colors, update [`ClinicalDesign.swift`](ClinicalDesign.swift) and [`ContentView.swift`](ContentView.swift) to match those exports. See [`../stitch_cs655_project/README.md`](../stitch_cs655_project/README.md) for a screen-by-screen map.
+
+---
+
 This demo is a native SwiftUI app path for CS655 mobile-computing framing:
 - Reads Apple Health data directly on iPhone (including Apple Watch-synced data)
 - Computes features on-device

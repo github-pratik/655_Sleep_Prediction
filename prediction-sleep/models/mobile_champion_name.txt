@@ -1,1 +1,0 @@
-sgd_log_alpha0_0001

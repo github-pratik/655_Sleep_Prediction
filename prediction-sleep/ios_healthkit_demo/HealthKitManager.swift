@@ -137,6 +137,7 @@ final class HealthKitManager: ObservableObject {
                 if let error {
                     completion(.failure(error))
                 } else if success {
+                    self?.setupBackgroundDelivery()
                     completion(.success(()))
                 } else {
                     completion(.failure(NSError(domain: "HealthKit", code: 3)))
@@ -147,44 +148,47 @@ final class HealthKitManager: ObservableObject {
 
     /// Check how much historical data is available for cold-start assessment
     func checkDataAvailability(completion: @escaping (DataAvailability) -> Void) {
-        var availability = DataAvailability(
-            hasSleepData: false, hasHR: false, hasHRV: false,
-            hasResp: false, hasSpO2: false, hasSteps: false,
-            hasActiveEnergy: false, hasWorkout: false,
-            earliestHealthDataDate: nil, nightsWithData: 0
-        )
+        final class AvailabilityScratch {
+            var hasSleepData = false
+            var hasHR = false
+            var hasHRV = false
+            var hasResp = false
+            var hasSpO2 = false
+            var hasSteps = false
+            var hasActiveEnergy = false
+            var hasWorkout = false
+            var earliestDates: [Date] = []
+        }
 
+        let scratch = AvailabilityScratch()
         let group = DispatchGroup()
         let lock = NSLock()
-        var earliestDates: [Date] = []
 
-        // Check sleep data
         group.enter()
         checkTypeExists(category: .sleepAnalysis) { exists, earliest in
             lock.lock()
-            availability.hasSleepData = exists
-            if let earliest { earliestDates.append(earliest) }
+            scratch.hasSleepData = exists
+            if let earliest { scratch.earliestDates.append(earliest) }
             lock.unlock()
             group.leave()
         }
 
-        // Check quantity types
-        let allTypes: [(inout Bool, inout Date?, HKQuantityTypeIdentifier)] = [
-            (&availability.hasHR, &availability.earliestHealthDataDate, .heartRate),
-            (&availability.hasHRV, &availability.earliestHealthDataDate, .heartRateVariabilitySDNN),
-            (&availability.hasResp, &availability.earliestHealthDataDate, .respiratoryRate),
-            (&availability.hasSpO2, &availability.earliestHealthDataDate, .oxygenSaturation),
-            (&availability.hasSteps, &availability.earliestHealthDataDate, .stepCount),
-            (&availability.hasActiveEnergy, &availability.earliestHealthDataDate, .activeEnergyBurned),
-            (&availability.hasWorkout, &availability.earliestHealthDataDate, .appleExerciseTime)
+        let quantityTypes: [(HKQuantityTypeIdentifier, ReferenceWritableKeyPath<AvailabilityScratch, Bool>)] = [
+            (.heartRate, \.hasHR),
+            (.heartRateVariabilitySDNN, \.hasHRV),
+            (.respiratoryRate, \.hasResp),
+            (.oxygenSaturation, \.hasSpO2),
+            (.stepCount, \.hasSteps),
+            (.activeEnergyBurned, \.hasActiveEnergy),
+            (.appleExerciseTime, \.hasWorkout)
         ]
 
-        for tuple in allTypes {
+        for (typeId, keyPath) in quantityTypes {
             group.enter()
-            checkQuantityExists(type: tuple.2) { exists, earliest in
+            checkQuantityExists(type: typeId) { exists, earliest in
                 lock.lock()
-                tuple.0 = exists
-                if let earliest { earliestDates.append(earliest) }
+                scratch[keyPath: keyPath] = exists
+                if let earliest { scratch.earliestDates.append(earliest) }
                 lock.unlock()
                 group.leave()
             }
@@ -192,11 +196,22 @@ final class HealthKitManager: ObservableObject {
 
         group.notify(queue: .main) {
             lock.lock()
-            availability.earliestHealthDataDate = earliestDates.min()
-            availability.nightsWithData = self.countNightsWithSleepData()
-            availability.readinessState // trigger computed
-            let result = availability
+            let earliest = scratch.earliestDates.min()
+            let nights = self.countNightsWithSleepData()
+            let result = DataAvailability(
+                hasSleepData: scratch.hasSleepData,
+                hasHR: scratch.hasHR,
+                hasHRV: scratch.hasHRV,
+                hasResp: scratch.hasResp,
+                hasSpO2: scratch.hasSpO2,
+                hasSteps: scratch.hasSteps,
+                hasActiveEnergy: scratch.hasActiveEnergy,
+                hasWorkout: scratch.hasWorkout,
+                earliestHealthDataDate: earliest,
+                nightsWithData: nights
+            )
             lock.unlock()
+            self.dataAvailability = result
             completion(result)
         }
     }
@@ -470,6 +485,43 @@ final class HealthKitManager: ObservableObject {
             completion(value.isFinite ? value : nil)
         }
 
+        healthStore.execute(query)
+    }
+
+    private func setupBackgroundDelivery() {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
+        
+        // 1. Tell iOS we want hourly background wake-ups for new sleep data
+        healthStore.enableBackgroundDelivery(for: sleepType, frequency: .hourly) { success, error in
+            if let error = error {
+                print("Failed to enable background delivery: \(error.localizedDescription)")
+            } else {
+                print("Background delivery enabled for hourly sleep updates.")
+            }
+        }
+        
+        // 2. Set up the observer query that iOS triggers when background data arrives
+        let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] query, completionHandler, error in
+            if let error = error {
+                print("Observer query failed: \(error.localizedDescription)")
+                completionHandler()
+                return
+            }
+            
+            // Background fetch triggered! Fetch newest features immediately.
+            self?.fetchLatestNightFeatures { result in
+                switch result {
+                case .success:
+                    print("Background fetch successful. Features ready for prediction.")
+                    // Here you can inject FatigueModel().predict() and save to a local DB
+                case .failure(let error):
+                    print("Background fetch failed: \(error.localizedDescription)")
+                }
+                // Inform iOS we are done so it can suspend the app and save battery
+                completionHandler()
+            }
+        }
+        
         healthStore.execute(query)
     }
 
