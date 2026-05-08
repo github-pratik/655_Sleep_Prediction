@@ -21,6 +21,7 @@ struct ContentView: View {
 
     @State private var selectedTab: StitchMainTab = .status
     @State private var showPermissionSheet = false
+    @State private var hasAutoDemoRun = false
 
     private let isSimulator: Bool = {
 #if targetEnvironment(simulator)
@@ -29,6 +30,7 @@ struct ContentView: View {
         false
 #endif
     }()
+    private let isAutoDemoMode = ProcessInfo.processInfo.arguments.contains("AUTODEMO_VIDEO")
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,6 +79,10 @@ struct ContentView: View {
                     modelLoadError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 }
             }
+            if isAutoDemoMode, !hasAutoDemoRun {
+                hasAutoDemoRun = true
+                runAutomatedDemoWalkthrough()
+            }
         }
         .onChange(of: selectedTab) { _, newTab in
             if newTab == .history, nightHistory.isEmpty {
@@ -94,7 +100,7 @@ struct ContentView: View {
         if !healthKit.authorizationGranted {
             return "Grant Health access on the Status tab, then open History again. Or use Open 7-night history from Settings after a successful fetch."
         }
-        return "Loading or no nights in the selected window. Try Open 7-night history on Settings, or sync Apple Watch sleep to Health."
+        return "Loading or no nights found in the last year of Apple Health data. Try Open 7-night history again, or use Load Demo Data."
     }
 
     private var statusTabScroll: some View {
@@ -325,10 +331,10 @@ struct ContentView: View {
                         runPrediction()
                     }
                     .buttonStyle(ClinicalPrimaryButtonStyle())
-                    .disabled(model == nil || features.isEmpty || loading)
+                    .disabled(model == nil || (features.isEmpty && nightHistory.isEmpty) || loading)
                 }
                 if features.isEmpty {
-                    Text("No prediction payload yet. Open Settings and use Fetch Night, Fetch + Predict, or Load Demo Data.")
+                    Text("No prediction payload yet. Open Settings and use Fetch Latest Available Night, Fetch + Predict, or Load Demo Data.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -357,8 +363,10 @@ struct ContentView: View {
                     }
                 })
                 analysisActionsOnly
+                settingsActionStatusCard
                 if isSimulator {
                     simulatorStitchCard
+                    autoDemoButton
                 }
                 if let modelLoadError {
                     Text(modelLoadError)
@@ -384,6 +392,46 @@ struct ContentView: View {
                 .accessibilityAddTraits(.isHeader)
         }
         .padding(.bottom, 2)
+    }
+
+    private var settingsActionStatusCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Action Status")
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.8)
+                .textCase(.uppercase)
+                .foregroundStyle(ClinicalTheme.onSurfaceVariant)
+
+            Text(uiMessage)
+                .font(.subheadline)
+                .foregroundStyle(ClinicalTheme.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Text("Last sync")
+                    .font(.caption)
+                    .foregroundStyle(ClinicalTheme.onSurfaceVariant)
+                Spacer()
+                Text(formatSyncTime(lastSyncAt))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ClinicalTheme.onSurface)
+            }
+
+            HStack {
+                Text("Fetched features")
+                    .font(.caption)
+                    .foregroundStyle(ClinicalTheme.onSurfaceVariant)
+                Spacer()
+                Text("\(features.count)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ClinicalTheme.onSurface)
+            }
+        }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(ClinicalTheme.surfaceContainerLow)
+        }
     }
 
     private var historyTabScroll: some View {
@@ -891,7 +939,10 @@ struct ContentView: View {
                 .foregroundStyle(ClinicalTheme.onSurfaceVariant)
                 .padding(.bottom, 2)
 
-            Button("Fetch Latest Night") {
+            // Label changed from "Fetch Latest Night" because the HealthKit query now scans
+            // up to the latest available night in the last 365 days. If you revert the fetch
+            // window back to 1-3 recent days in HealthKitManager, change this label back too.
+            Button("Fetch Latest Available Night") {
                 fetchLatestNight()
             }
             .buttonStyle(ClinicalSecondaryButtonStyle(compact: false, fullWidth: true))
@@ -1144,6 +1195,19 @@ struct ContentView: View {
         .accessibilityLabel("Simulator mode: load demo data and run prediction")
     }
 
+    private var autoDemoButton: some View {
+        Button {
+            runAutomatedDemoWalkthrough()
+        } label: {
+            Label("Run Auto Demo Walkthrough", systemImage: "video.fill")
+                .font(.headline.weight(.bold))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(ClinicalPrimaryButtonStyle(compact: false, fullWidth: true))
+        .disabled(loading)
+        .accessibilityLabel("Automatically run the demo walkthrough")
+    }
+
     // MARK: - Helpers
 
     private var missingFeatureCount: Int {
@@ -1196,11 +1260,16 @@ struct ContentView: View {
                     features = fetched
                     prediction = nil
                     lastSyncAt = Date()
-                    uiMessage = "Fetched latest night from Apple Health."
-                    selectedTab = .settings
+                    uiMessage = "Fetched latest available night from Apple Health. Open Status to review the summary."
+                    selectedTab = .status
                     healthKit.checkDataAvailability { _ in }
                 case .failure(let error):
-                    uiMessage = messageForHealthKitFailure(error, action: "Data fetch failed")
+                    if applyLatestHistoryNightToStatus(runPredictionAfterLoad: false) {
+                        uiMessage = "Latest-night fetch failed, but the newest History night was loaded into Status."
+                        selectedTab = .status
+                    } else {
+                        uiMessage = messageForHealthKitFailure(error, action: "Data fetch failed")
+                    }
                 }
             }
         }
@@ -1215,13 +1284,18 @@ struct ContentView: View {
                     features = fetched
                     prediction = nil
                     lastSyncAt = Date()
-                    selectedTab = .settings
+                    selectedTab = .status
                     runPrediction()
                     loading = false
                     uiMessage = "Fetched Apple Health data and predicted on-device."
                 case .failure(let error):
                     loading = false
-                    uiMessage = messageForHealthKitFailure(error, action: "Fetch + predict failed")
+                    if applyLatestHistoryNightToStatus(runPredictionAfterLoad: true) {
+                        uiMessage = "Latest-night fetch failed, but prediction ran using the newest History night."
+                        selectedTab = .status
+                    } else {
+                        uiMessage = messageForHealthKitFailure(error, action: "Fetch + predict failed")
+                    }
                 }
             }
         }
@@ -1239,13 +1313,17 @@ struct ContentView: View {
                         if isSimulator {
                             applySyntheticSevenNightHistory(reason: "Simulator: HealthKit returned no nights.")
                         } else {
-                            uiMessage = "No sleep nights found in Apple Health for this window."
+                            uiMessage = "No sleep nights found in Apple Health for the last year."
                         }
                     } else {
                         nightHistory = nights
+                        uiMessage = "Loaded \(nights.count) nights from Apple Health."
                         guard let model else { return }
                         historyPredictions = nights.map { night in
                             model.predict(features: model.completeFeatures(night.features))
+                        }
+                        if features.isEmpty {
+                            _ = applyLatestHistoryNightToStatus(runPredictionAfterLoad: false)
                         }
                     }
                 case .failure(let error):
@@ -1310,20 +1388,38 @@ struct ContentView: View {
             uiMessage = "Model contract not loaded."
             return
         }
+        guard !features.isEmpty || !nightHistory.isEmpty else {
+            uiMessage = "No fetched feature payload yet. Use Fetch Latest Available Night, Open 7-night history, or Load Demo Data first."
+            return
+        }
+        if features.isEmpty {
+            _ = applyLatestHistoryNightToStatus(runPredictionAfterLoad: false)
+        }
         let t0 = CFAbsoluteTimeGetCurrent()
         prediction = model.predict(features: features)
         let t1 = CFAbsoluteTimeGetCurrent()
         lastInferenceMs = (t1 - t0) * 1000.0
         uiMessage = "Prediction ran on-device (no server)."
-        selectedTab = .settings
     }
 
     private func loadSimulatorDemoAndPredict() {
         _ = ensureModelLoaded()
         loadDemoFeatures()
-        selectedTab = .settings
+        selectedTab = .status
         guard model != nil, !features.isEmpty else { return }
         runPrediction()
+    }
+
+    @discardableResult
+    private func applyLatestHistoryNightToStatus(runPredictionAfterLoad: Bool) -> Bool {
+        guard let latestNight = nightHistory.first else { return false }
+        features = latestNight.features
+        prediction = nil
+        lastSyncAt = Date()
+        if runPredictionAfterLoad {
+            runPrediction()
+        }
+        return true
     }
 
     private func loadDemoFeatures() {
@@ -1485,11 +1581,27 @@ struct ContentView: View {
         }
         switch ns.code {
         case 5:
-            return "No sleep samples in Apple Health. The Simulator has none—use Load Demo Data. On a real iPhone, wear your Apple Watch to sleep and open the Health app after sync."
+            return "No sleep samples found in Apple Health for the last year. Use Load Demo Data, or sync older Apple Watch sleep into Health."
         case 6, 7:
             return "Could not build a sleep night from Health data. Try again after your watch has synced."
         default:
             return "\(action): \(error.localizedDescription)"
+        }
+    }
+
+    private func runAutomatedDemoWalkthrough() {
+        selectedTab = .status
+        uiMessage = "Auto demo running: loading data, predicting, and navigating views."
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            loadSimulatorDemoAndPredict()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                selectedTab = .history
+                fetchHistory()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    selectedTab = .settings
+                    uiMessage = "Auto demo complete."
+                }
+            }
         }
     }
 

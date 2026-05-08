@@ -88,6 +88,16 @@ struct QuantityStats {
 
 final class HealthKitManager: ObservableObject {
     private let healthStore = HKHealthStore()
+    // Keep background delivery off for the course demo unless the project also adds the
+    // `com.apple.developer.healthkit.background-delivery` entitlement. Manual fetch/predict
+    // remains the primary supported path.
+    private let enableBackgroundDelivery = false
+    // Temporary demo-friendly lookback: search up to 365 days so older Apple Watch data
+    // (for example, December 2025 sleep) can still be fetched on-device.
+    // To restore the original "latest night from recent data only" behavior:
+    // - change this back to 3 for fetchLatestSleepSummary
+    // - and change fetchMultipleNights to use a short recent window again
+    private let historicalSleepLookbackDays = 365
 
     @Published var authorizationGranted = false
     @Published var statusMessage = "Health access not requested"
@@ -109,7 +119,9 @@ final class HealthKitManager: ObservableObject {
     private let activityDescriptors: [(prefix: String, id: HKQuantityTypeIdentifier, unit: HKUnit, aggregate: Bool)] = [
         ("steps", .stepCount, HKUnit.count(), true),
         ("active_energy", .activeEnergyBurned, HKUnit.kilocalorie(), true),
-        ("avg_physical_effort", .appleExerciseTime, HKUnit.minute(), false)
+        // Apple Exercise Time is a cumulative quantity in HealthKit, so it must use sum,
+        // not discreteAverage, or HKStatisticsQuery throws an NSInvalidArgumentException.
+        ("avg_physical_effort", .appleExerciseTime, HKUnit.minute(), true)
     ]
 
     func requestAuthorization(completion: @escaping (Result<Void, Error>) -> Void) {
@@ -137,7 +149,9 @@ final class HealthKitManager: ObservableObject {
                 if let error {
                     completion(.failure(error))
                 } else if success {
-                    self?.setupBackgroundDelivery()
+                    if self?.enableBackgroundDelivery == true {
+                        self?.setupBackgroundDelivery()
+                    }
                     completion(.success(()))
                 } else {
                     completion(.failure(NSError(domain: "HealthKit", code: 3)))
@@ -224,7 +238,10 @@ final class HealthKitManager: ObservableObject {
         }
 
         let now = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -(count + 3), to: now) ?? now.addingTimeInterval(-Double(count + 3) * 24 * 3600)
+        // Uses the shared historical lookback above so History can surface older nights too.
+        // Revert to a short recent window if you only want the latest 7 nights from recent days.
+        let start = Calendar.current.date(byAdding: .day, value: -historicalSleepLookbackDays, to: now)
+            ?? now.addingTimeInterval(-Double(historicalSleepLookbackDays) * 24 * 3600)
         let predicate = HKQuery.predicateForSamples(withStart: start, end: now, options: [])
         let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
 
@@ -267,12 +284,25 @@ final class HealthKitManager: ObservableObject {
                 innerGroup.enter()
 
                 self.buildNightSummary(from: nightSamples, nightDate: nightKey, calendar: calendar) { summary in
-                    if let summary {
-                        innerLock.lock()
-                        results.append(summary)
-                        innerLock.unlock()
+                    guard let summary else {
+                        innerGroup.leave()
+                        return
                     }
-                    innerGroup.leave()
+
+                    self.enrichWithActivityAndMetrics(summary: summary, updatePublishedStatus: false) { result in
+                        let finalSummary: NightSleepSummary
+                        switch result {
+                        case .success(let enrichedFeatures):
+                            finalSummary = self.withMergedFeatures(summary: summary, features: enrichedFeatures)
+                        case .failure:
+                            finalSummary = summary
+                        }
+
+                        innerLock.lock()
+                        results.append(finalSummary)
+                        innerLock.unlock()
+                        innerGroup.leave()
+                    }
                 }
             }
 
@@ -387,6 +417,7 @@ final class HealthKitManager: ObservableObject {
 
     private func enrichWithActivityAndMetrics(
         summary: NightSleepSummary,
+        updatePublishedStatus: Bool = true,
         completion: @escaping (Result<[String: Double], Error>) -> Void
     ) {
         var features = summary.features
@@ -446,15 +477,39 @@ final class HealthKitManager: ObservableObject {
         }
 
         group.notify(queue: .main) {
-            self.lastDataOrigin = [
-                summary.sourceSummary,
-                "watch-priority metrics \(metricsUsingWatch)/\(self.metricDescriptors.count)"
-            ].joined(separator: " | ")
-            self.statusMessage = metricOrigins.isEmpty
-                ? "Latest night features fetched"
-                : "Latest night features fetched (\(metricOrigins.joined(separator: " | ")))"
+            if updatePublishedStatus {
+                self.lastDataOrigin = [
+                    summary.sourceSummary,
+                    "watch-priority metrics \(metricsUsingWatch)/\(self.metricDescriptors.count)"
+                ].joined(separator: " | ")
+                self.statusMessage = metricOrigins.isEmpty
+                    ? "Latest night features fetched"
+                    : "Latest night features fetched (\(metricOrigins.joined(separator: " | ")))"
+            }
             completion(.success(features))
         }
+    }
+
+    private func withMergedFeatures(summary: NightSleepSummary, features: [String: Double]) -> NightSleepSummary {
+        NightSleepSummary(
+            nightDate: summary.nightDate,
+            start: summary.start,
+            end: summary.end,
+            sourceSummary: summary.sourceSummary,
+            features: features,
+            dataAvailability: DataAvailability(
+                hasSleepData: features["total_sleep_minutes"] != nil,
+                hasHR: features["hr_mean"] != nil,
+                hasHRV: features["hrv_mean"] != nil,
+                hasResp: features["resp_mean"] != nil,
+                hasSpO2: features["spo2_mean"] != nil,
+                hasSteps: features["steps"] != nil,
+                hasActiveEnergy: features["active_energy"] != nil,
+                hasWorkout: features["avg_physical_effort"] != nil,
+                earliestHealthDataDate: dataAvailability.earliestHealthDataDate,
+                nightsWithData: dataAvailability.nightsWithData
+            )
+        )
     }
 
     private func fetchActivityAggregate(
@@ -543,7 +598,11 @@ final class HealthKitManager: ObservableObject {
         }
 
         let now = Date()
-        let start = Calendar.current.date(byAdding: .day, value: -3, to: now) ?? now.addingTimeInterval(-3 * 24 * 3600)
+        // Uses the shared historical lookback above so "Fetch Latest Available Night"
+        // can return the newest stored night even when recent watch data is missing.
+        // Revert this to 3 days if you want the original recent-only fetch behavior.
+        let start = Calendar.current.date(byAdding: .day, value: -historicalSleepLookbackDays, to: now)
+            ?? now.addingTimeInterval(-Double(historicalSleepLookbackDays) * 24 * 3600)
         let predicate = HKQuery.predicateForSamples(withStart: start, end: now, options: [])
         let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
 

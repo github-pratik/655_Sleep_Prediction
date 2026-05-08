@@ -21,6 +21,7 @@ venv/
 
 # Xcode
 DerivedData/
+prediction-sleep/ios_healthkit_demo/build/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 *.xcuserstate
@@ -35,6 +36,7 @@ prediction-sleep/dataset/public/
 # Local logs and temp files
 error.log
 excalidraw.log
+tmp/
 prediction-sleep/logs/
 prediction-sleep/archives/
 
